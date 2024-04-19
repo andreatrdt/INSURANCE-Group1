@@ -61,8 +61,10 @@ plot([1:24],Life_exp)
 S0=0.8*F0;
 sigma=0.2;
 T=50;
-N=1e3;
+N=10;
 regular_deduction = 0.022;
+
+%% Basic scenario
 
 S = simulate_GBM(rates(1:T), S0, sigma, T, N, regular_deduction);
 
@@ -75,11 +77,16 @@ S = simulate_GBM(rates(1:T), S0, sigma, T, N, regular_deduction);
 
 S=mean(S,1);
 
-S = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
-S_UP=mean(S,1);
+%% Stress scenario UP
 
-S = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
-S_DOWN=mean(S,1);
+S_UP = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
+S_UP=mean(S_UP,1);
+
+%% Stress scenario DOWN
+
+S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
+S_DOWN=mean(S_DOWN,1);
+
 
 figure
 plot([1:T],S)
@@ -97,7 +104,4 @@ PF = mean(PF,1);
 Value = S + PF;
 disp(Value(end))
 
-Value_t0 = Value(end)*exp(-rate_50*T);
-
 toc
-
