@@ -12,12 +12,13 @@ tic
 % load data from xls file
 
 % filename in .xls
-filename = 'Life tables of the resident population.xls';
+filename = 'LifeTable.xlsx';
 
 % read excel data from filename
 % INPUT filename, formatData, interval of rows and columns to read e.g. 'E8:F36'
 % 
-P_death = xlsread(filename,1,'D63:D113');
+P_death = xlsread(filename,1,'D64:D113');
+P_death = P_death./1000;
 
 filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
 
@@ -40,9 +41,6 @@ plot(50,rate_50,'ro')
 legend( 'rates','rates_{DOWN}','rates_{UP}')
 
 F0=1e5; % value of the funf at t = 0
-% plot mortality table
-figure
-plot([1:24],Life_exp)
 
 % load data
 S0=0.8*F0;
@@ -58,6 +56,7 @@ expenses = yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)];
 rates = rates(1:T);
 rates_UP = rates_UP(1:T);
 rates_DOWN = rates_DOWN(1:T);
+benefit_commission = 20;
 
 % Liabilities
 COMM = 0.014;
@@ -72,34 +71,36 @@ PF_0 = 0.2*F0;
 PF = simulate_GBM(rates(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF = mean(PF,1);
 
+F= S + PF;
+
 %calculate discouts
 discounts = exp(-rates.*dt);
 
-liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 disp(liabilities)
 
 %% Stress scenario UP
 
 %simulate equity prices
-S_UP = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
+S_UP = simulate_GBM(rates_UP(1:T), S0, sigma_equity, T, N, regular_deduction);
 S_UP = mean(S_UP,1);
 PF_UP = simulate_GBM(rates_UP(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF_UP = mean(PF_UP,1);
+
+F_UP = S_UP + PF_UP;
 
 %calculate discouts
 discounts_UP = exp(-rates_UP.*dt);
 
 
 % Liabilities
-COMM = 0.014;
-lt = 0.15;
-liabilities_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+liabilities_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_UP,benefit_commission,T);
 disp(liabilities_UP)
 
 
 %% Stress scenario DOWN
 
-S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
+S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma_equity, T, N, regular_deduction);
 S_DOWN = mean(S_DOWN,1);
 PF_DOWN = simulate_GBM(rates_DOWN(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF_DOWN = mean(PF_DOWN,1);
@@ -107,19 +108,11 @@ PF_DOWN = mean(PF_DOWN,1);
 %calculate discouts
 discounts_DOWN = exp(-rates_DOWN.*dt);
 
+F_DOWN = S_DOWN + PF_DOWN;
 
 % Liabilities
-COMM = 0.014;
-lt = 0.15 * ones(size(dt),1);
-liabilities_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+liabilities_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_DOWN, benefit_commission,T);
 disp(liabilities_DOWN)
+
 toc
 
-figure
-plot([1:T],S)
-hold on
-plot([1:T],S_UP)
-plot([1:T],S_DOWN)
-
-F= S + PF;
-disp(Value(end))
