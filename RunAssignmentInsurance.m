@@ -60,54 +60,73 @@ plot([1:24],Life_exp)
 % load data
 S0=0.8*F0;
 sigma_equity=0.2;
-T=50;
-N=10;
+T = 50;
+N = 10;
 regular_deduction = 0.022;
 sigma_pf = 0.1;
 yearly_expense_t0 = 50;
 dt = [1:1:T]'; 
+inflation = 0.02;
+expenses = yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)];
+rates = rates(1:T);
+rates_UP = rates_UP(1:T);
+rates_DOWN = rates_DOWN(1:T);
 
-expenses=yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)];
-
-
-S = zeros(N,T); 
-S(:,1) = S0*ones(N,1);
-%calculate discouts
-discounts = exp(-rates.*dt);
-%calculate forward rates
-fwd = discounts./[1; discounts(1:end-1)];
-fwd_rates = -log(fwd);
+% Liabilities
+COMM = 0.014;
+lt = 0.15 * ones(length(dt),1);
 
 %% Basic scenario
 
 S = simulate_GBM(rates(1:T), S0, sigma_equity, T, N, regular_deduction);
-
-% plot the paths of the stock price
-% figure
-% for i = 1:T
-%     plot([1:T],S(i,:))
-%     hold on
-% end
-
 S=mean(S,1);
 % simulate property features
 PF_0 = 0.2*F0;
 PF = simulate_GBM(rates(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF = mean(PF,1);
+
+%calculate discouts
+discounts = exp(-rates.*dt);
+
+liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+disp(liabilities)
+
 %% Stress scenario UP
 
 %simulate equity prices
 S_UP = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
-S_UP=mean(S_UP,1);
+S_UP = mean(S_UP,1);
 PF_UP = simulate_GBM(rates_UP(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF_UP = mean(PF_UP,1);
+
+%calculate discouts
+discounts_UP = exp(-rates_UP.*dt);
+
+
+% Liabilities
+COMM = 0.014;
+lt = 0.15;
+liabilities_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+disp(liabilities_UP)
+
 
 %% Stress scenario DOWN
 
 S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
-S_DOWN=mean(S_DOWN,1);
+S_DOWN = mean(S_DOWN,1);
 PF_DOWN = simulate_GBM(rates_DOWN(1:T), PF_0, sigma_pf, T, N, regular_deduction);
 PF_DOWN = mean(PF_DOWN,1);
+
+%calculate discouts
+discounts_DOWN = exp(-rates_DOWN.*dt);
+
+
+% Liabilities
+COMM = 0.014;
+lt = 0.15 * ones(size(dt),1);
+liabilities_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt);
+disp(liabilities_DOWN)
+toc
 
 figure
 plot([1:T],S)
@@ -115,13 +134,5 @@ hold on
 plot([1:T],S_UP)
 plot([1:T],S_DOWN)
 
-Value = S + PF;
+F= S + PF;
 disp(Value(end))
-
-
-
-%% Liabilities
-COMM = 0.014;
-lt = 0.15 * ones(size(dt),1);
-liabilities = Liabilities(C0, qx, lt, regular_deduction, COMM, discounts, expenses)
-toc
