@@ -55,7 +55,16 @@ disp(rate_50)
 plot(50,rate_50,'ro')
 legend( 'rates','rates_{DOWN}','rates_{UP}')
 
+
 % plot mortality table
 figure
 plot([1:24],Life_exp)
+
+% load data
+S0=0.8*1e5;
+sigma=0.2;
+T=50;
+N=1e5;
+
+S = simulate_GBM(S0, sigma, T, N, M , regular_deduction)
 
