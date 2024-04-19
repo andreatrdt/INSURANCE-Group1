@@ -122,6 +122,6 @@ disp(Value(end))
 
 %% Liabilities
 COMM = 0.014;
-lt = 0.15 * ones(size(dt),1);
-liabilities = Liabilities(C0, qx, lt, regular_deduction, COMM, discounts, expenses)
+
+liabilities = Liabilities(C0, qx, lt, regula, COMM, discounts, expenses)
 toc
