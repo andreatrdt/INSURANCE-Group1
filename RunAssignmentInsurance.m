@@ -63,6 +63,16 @@ sigma=0.2;
 T=50;
 N=10;
 regular_deduction = 0.022;
+sigma_pf = 0.1;
+
+dt = [1:1:T]'; 
+S = zeros(N,T); 
+S(:,1) = S0*ones(N,1);
+%calculate discouts
+discounts = exp(-rates.*dt);
+%calculate forward rates
+fwd = discounts./[1; discounts(1:end-1)];
+fwd_rates = -log(fwd);
 
 %% Basic scenario
 
@@ -76,30 +86,30 @@ S = simulate_GBM(rates(1:T), S0, sigma, T, N, regular_deduction);
 % end
 
 S=mean(S,1);
-
+% simulate property features
+PF_0 = 0.2*F0;
+PF = simulate_GBM(rates(1:T), PF_0, sigma_pf, T, N, regular_deduction);
+PF = mean(PF,1);
 %% Stress scenario UP
 
+%simulate equity prices
 S_UP = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
 S_UP=mean(S_UP,1);
+PF_UP = simulate_GBM(rates_UP(1:T), PF_0, sigma_pf, T, N, regular_deduction);
+PF_UP = mean(PF_UP,1);
 
 %% Stress scenario DOWN
 
 S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
 S_DOWN=mean(S_DOWN,1);
-
+PF_DOWN = simulate_GBM(rates_DOWN(1:T), PF_0, sigma_pf, T, N, regular_deduction);
+PF_DOWN = mean(PF_DOWN,1);
 
 figure
 plot([1:T],S)
 hold on
 plot([1:T],S_UP)
 plot([1:T],S_DOWN)
-
-
-% simulate property features
-PF_0 = 0.2*F0;
-sigma = 0.1;
-PF = simulate_GBM(rates(1:T), PF_0, sigma, T, N, regular_deduction);
-PF = mean(PF,1);
 
 Value = S + PF;
 disp(Value(end))
