@@ -23,5 +23,14 @@ function [S] = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     S(:,i+1) = (1-regular_deduction)*S(:,i).*exp((fwd_rates(i)-(sigma^2)/2)*(dt(i+1)-dt(i))-sigma*sqrt(dt(i+1)-dt(i))*randn(N,1)); 
     end
 
+    % % plot the paths
+    % figure
+    % for i = 1:N
+    %     plot(dt,S(i,:))
+    %     hold on
+    % end
+    % xlabel('Time')
+    % ylabel('Stock Price')
+    % title('Stock Price Paths')
     
 end
