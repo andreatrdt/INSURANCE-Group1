@@ -12,27 +12,14 @@ tic
 % load data from xls file
 
 % filename in .xls
-filename = 'LifeTable2022_2023.xls';
+filename = 'Life tables of the resident population.xls';
 
 % read excel data from filename
 % INPUT filename, formatData, interval of rows and columns to read e.g. 'E8:F36'
 % 
-survivors = xlsread(filename,1,'D8:D36');
-deaths = xlsread(filename,1,'F8:F31');
-P_death = xlsread(filename,1,'H8:H31');
-Years_lived = xlsread(filename,1,'J8:J31');
-Proj_prob = xlsread(filename,1,'L8:L31');
-Life_exp = xlsread(filename,1,'N8:N31');
+P_death = xlsread(filename,1,'D63:D113');
 
 filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
-
-% disp(survivors)
-% disp(deaths)
-% disp(P_death)
-% disp(Years_lived)
-% disp(Proj_prob)
-% disp(Life_exp)
-
 
 Sheet = 'RFR_spot_no_VA';
 
