@@ -1,4 +1,4 @@
-function [S] = simulate_GBM(S0, sigma, T, N, M , regular_deduction)
+function [S] = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     % INPUT
     % S0: initial stock price
     % mu: expected return
@@ -9,14 +9,18 @@ function [S] = simulate_GBM(S0, sigma, T, N, M , regular_deduction)
     % OUTPUT
     % S: stock price paths
     % monte carlo simulation
-
-    dt = [1; T(2:end, 1)-T(1:end-1, 1)]''; 
-
-    S = zeros(N, length(dt)); 
+    
+    dt = [1:1:T]'; 
+    S = zeros(N,T); 
     S(:,1) = S0*ones(N,1);
-
+    %calculate discouts
+    discounts = exp(-rates.*dt);
+    %calculate forward rates
+    fwd = discounts./[1; discounts(1:end-1)];
+    fwd_rates = -log(fwd);
+    
     for i = 1:(length(dt)-1)
-    S(:,i+1) = (1-regular_deduction)*S(:,i).*exp((-(sigma^2)/2)*dt(i)+sigma*randn(N,1)); 
+    S(:,i+1) = (1-regular_deduction)*S(:,i).*exp((fwd_rates(i)-(sigma^2)/2)*(dt(i+1)-dt(i))-sigma*sqrt(dt(i+1)-dt(i))*randn(N,1)); 
     end
 
     

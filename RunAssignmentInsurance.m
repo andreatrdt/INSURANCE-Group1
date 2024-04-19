@@ -38,10 +38,8 @@ Sheet = 'RFR_spot_no_VA';
 
 rates_UP = xlsread(filename,5,'S11:S160');
 rates_DOWN = xlsread(filename,6,'S11:S160');
-
 rates = xlsread(filename,1,'S11:S160');
 
-disp(rates)
 
 % plot yield rate curve
 figure
@@ -51,20 +49,55 @@ plot(years,rates)
 plot(years,rates_UP)
 plot(years,rates_DOWN)
 rate_50 = interp1(years,rates,50);
-disp(rate_50)
 plot(50,rate_50,'ro')
 legend( 'rates','rates_{DOWN}','rates_{UP}')
 
-
+F0=1e5;
 % plot mortality table
 figure
 plot([1:24],Life_exp)
 
 % load data
-S0=0.8*1e5;
+S0=0.8*F0;
 sigma=0.2;
 T=50;
-N=1e5;
+N=1e3;
+regular_deduction = 0.022;
 
-S = simulate_GBM(S0, sigma, T, N, M , regular_deduction)
+S = simulate_GBM(rates(1:T), S0, sigma, T, N, regular_deduction);
+
+% plot the paths of the stock price
+% figure
+% for i = 1:T
+%     plot([1:T],S(i,:))
+%     hold on
+% end
+
+S=mean(S,1);
+
+S = simulate_GBM(rates_UP(1:T), S0, sigma, T, N, regular_deduction);
+S_UP=mean(S,1);
+
+S = simulate_GBM(rates_DOWN(1:T), S0, sigma, T, N, regular_deduction);
+S_DOWN=mean(S,1);
+
+figure
+plot([1:T],S)
+hold on
+plot([1:T],S_UP)
+plot([1:T],S_DOWN)
+
+
+% simulate property features
+PF_0 = 0.2*F0;
+sigma = 0.1;
+PF = simulate_GBM(rates(1:T), PF_0, sigma, T, N, regular_deduction);
+PF = mean(PF,1);
+
+Value = S + PF;
+disp(Value(end))
+
+Value_t0 = Value(end)*exp(-rate_50*T);
+
+toc
 
