@@ -16,7 +16,7 @@ close all;
 format bank
 
 % fix random seed
-rng(42)
+rng(0)
 
 % start run time
 tic
@@ -55,7 +55,7 @@ F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
 sigma_equity = 0.2; % volatility of equity
 T = 50; % number of years
-N = 1e4; % number of simulations
+N = 10; % number of simulations
 regular_deduction = 0.022; % regular deduction
 sigma_pf = 0.1; % volatility of property features
 yearly_expense_t0 = 50; % yearly expenses at t = 0
