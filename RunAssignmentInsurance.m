@@ -21,7 +21,7 @@ rng(42)
 % start run time
 tic
 
-% load data from xls file
+% load data from xlsx file
 
 % filename in .xls
 filename = 'LifeTable.xlsx';
@@ -47,7 +47,7 @@ plot(years,rates_UP)
 plot(years,rates_DOWN)
 rate_50 = interp1(years,rates,50);
 plot(50,rate_50,'ro')
-legend( 'rates','rates_{DOWN}','rates_{UP}')
+legend( 'rates','rates_{UP}','rates_{DOWN}')
 
 % parameters
 
@@ -80,11 +80,11 @@ rates_DOWN = rates_DOWN(1:T);
 %% Basic scenario
 
 % simulate equity prices
-S = simulate_GBM(rates(1:T), S0, sigma_equity, T, N, regular_deduction);
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 S = mean(S,1);
 % simulate property features
 PF_0 = 0.2*F0;
-PF = simulate_GBM(rates(1:T), PF_0, sigma_pf, T, N, regular_deduction);
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 PF = mean(PF,1);
 
 % calculate fund value
@@ -93,7 +93,7 @@ F = S + PF;
 %calculate discouts
 discounts = exp(-rates.*dt);
 
-liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 disp(liabilities)
 
 BOF = F0 - liabilities;
@@ -101,46 +101,46 @@ BOF = F0 - liabilities;
 %% Stress scenario UP
 
 %simulate equity prices
-S_UP = simulate_GBM(rates_UP(1:T), S0, sigma_equity, T, N, regular_deduction);
-S_UP = mean(S_UP,1);
+S_rates_UP = simulate_GBM(rates_UP, S0, sigma_equity, T, N, regular_deduction);
+S_rates_UP = mean(S_rates_UP,1);
 % simulate property features
-PF_UP = simulate_GBM(rates_UP(1:T), PF_0, sigma_pf, T, N, regular_deduction);
-PF_UP = mean(PF_UP,1);
+PF_rates_UP = simulate_GBM(rates_UP, PF_0, sigma_pf, T, N, regular_deduction);
+PF_rates_UP = mean(PF_rates_UP, 1);
 
 % calculate fund value
-F_UP = S_UP + PF_UP;
+F_rates_UP = S_rates_UP + PF_rates_UP;
 
 %calculate discouts
 discounts_UP = exp(-rates_UP.*dt);
 
 % Liabilities
-liabilities_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_UP,benefit_commission,T);
-disp(liabilities_UP)
+liabilities_rates_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt, F_rates_UP, benefit_commission, T);
+disp(liabilities_rates_UP)
 
-BOF_UP = F0 - liabilities_UP;
-delta_BOF_UP = max(BOF-BOF_UP,0);
+BOF_rates_UP = F0 - liabilities_rates_UP;
+delta_BOF_rates_UP = max(BOF-BOF_rates_UP,0);
 
 %% Stress scenario DOWN
 
 % simulate equity prices
-S_DOWN = simulate_GBM(rates_DOWN(1:T), S0, sigma_equity, T, N, regular_deduction);
-S_DOWN = mean(S_DOWN,1);
+S_rates_DOWN = simulate_GBM(rates_DOWN, S0, sigma_equity, T, N, regular_deduction);
+S_rates_DOWN = mean(S_rates_DOWN,1);
 % simulate property features
-PF_DOWN = simulate_GBM(rates_DOWN(1:T), PF_0, sigma_pf, T, N, regular_deduction);
-PF_DOWN = mean(PF_DOWN,1);
+PF_rates_DOWN = simulate_GBM(rates_DOWN, PF_0, sigma_pf, T, N, regular_deduction);
+PF_rates_DOWN = mean(PF_rates_DOWN,1);
 
 %calculate discouts
 discounts_DOWN = exp(-rates_DOWN.*dt);
 
 % calculate fund value
-F_DOWN = S_DOWN + PF_DOWN;
+F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
 
 % Liabilities
-liabilities_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_DOWN, benefit_commission,T);
-disp(liabilities_DOWN)
+liabilities_rates_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_rates_DOWN, benefit_commission,T);
+disp(liabilities_rates_DOWN)
 
-BOF_DOWN = F0 - liabilities_DOWN;
-delta_BOF_DOWN = max(BOF-BOF_DOWN,0);
+BOF_rates_DOWN = F0 - liabilities_rates_DOWN;
+delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Property risk
@@ -157,7 +157,7 @@ P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deducti
 F = P_shocked + S;       
 
 % Computation of Liabilities 
-liabilities_shocked_pr = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+liabilities_shocked_pr = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 % Delta BOF
 BOF_pr = F0_property - liabilities_shocked_pr;
