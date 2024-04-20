@@ -64,6 +64,8 @@ inflation = 0.02; % inflation rate
 expenses = yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)]; % expenses
 benefit_commission = 20; % benefit commission
 
+disp('Parameters loaded...')
+
 % Liabilities setup
 COMM = 0.014; % commission
 lt = 0.15 * ones(length(dt),1); % lapse rate
@@ -77,15 +79,17 @@ rates_DOWN = rates_DOWN(1:T);
 %% Intrest rate risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+disp('Interest rate risk analysis...')
+
 %% Basic scenario
 
 % simulate equity prices
-S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
-S = mean(S,1);
+S_simulated = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+S = mean(S_simulated,1);
 % simulate property features
 PF_0 = 0.2*F0;
-PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
-PF = mean(PF,1);
+PF_simulated = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+PF = mean(PF_simulated,1);
 
 % calculate fund value
 F = S + PF;
@@ -94,9 +98,18 @@ F = S + PF;
 discounts = exp(-rates.*dt);
 
 liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
-disp(liabilities)
 
 BOF = F0 - liabilities;
+
+% plot paths 
+figure
+hold on
+for i=1:N
+    plot(dt,PF_simulated(i,:),"LineStyle",":")
+    plot(dt,S_simulated(i,:),"LineStyle","-.")
+    plot(dt,PF_simulated(i,:)+S_simulated(i,:))
+end
+title('Paths of the fund value')
 
 %% Stress scenario UP
 
@@ -115,7 +128,6 @@ discounts_UP = exp(-rates_UP.*dt);
 
 % Liabilities
 liabilities_rates_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt, F_rates_UP, benefit_commission, T);
-disp(liabilities_rates_UP)
 
 BOF_rates_UP = F0 - liabilities_rates_UP;
 delta_BOF_rates_UP = max(BOF-BOF_rates_UP,0);
@@ -137,7 +149,6 @@ F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
 
 % Liabilities
 liabilities_rates_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_rates_DOWN, benefit_commission,T);
-disp(liabilities_rates_DOWN)
 
 BOF_rates_DOWN = F0 - liabilities_rates_DOWN;
 delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
@@ -145,6 +156,9 @@ delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Property risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+disp('Property risk analysis...')
+
 % Initial value of the shocked value of the property
 P0_shocked=(1-0.25)*PF_0;
 % initial value for the fund
@@ -167,6 +181,8 @@ delta_BOF_pr = max(BOF - BOF_pr,0);
 %% Equity risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+disp('Equity risk analysis...')
+
 % initial value for shocked equity
 S0_shocked = (1-0.39)*S0;
 % initail value for the fund
@@ -188,6 +204,9 @@ delta_BOF_eq = max(BOF - BOF_eq,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% MORTALITY RISK
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+disp('Mortality risk analysis...')
+
 P_death_shocked = min(1,P_death*1.15);
 
 % Computation of Liabilities
@@ -200,6 +219,9 @@ delta_BOF_mortality = max(BOF - BOF_mortality,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Lapse risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+disp('Lapse risk analysis...')
+
 % Lapse rate
 lt = 0.15;
 %% lapse UP risk
@@ -239,6 +261,9 @@ delta_BOF_lapse_mass = max(BOF - BOF_lapse_mass,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Expense risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+disp('Expense risk analysis...')
+
 % reset lapse rate
 lt = 0.15*ones(length(dt),1);
 
@@ -257,6 +282,8 @@ delta_BOF_expense = max(BOF - BOF_expense,0);
 %% Catastrophe risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+disp('Catastrophe risk analysis...')
+
 % Catastrophe scenario
 P_death_cat = [P_death(1)+0.0015; P_death(2:end)];
 
@@ -271,19 +298,23 @@ delta_BOF_catastrophe = max(BOF - BOF_cat,0);
 BOF_cat = F0 - liabilities_cat;
 delta_BOF_cat = max(BOF-BOF_cat,0);
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% BSCR Computation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+disp('Basic Solvency Capital requirment computation...')
+
 
 % SCR Market risk
-SCR_IR = max(delta_BOF_UP , delta_BOF_DOWN);        % Interest rate risk
+SCR_IR = max(delta_BOF_rates_UP , delta_BOF_rates_DOWN);        % Interest rate risk
 SCR_EQ = delta_BOF_eq;                              % Equity risk
 SCR_PR = delta_BOF_pr;                              % Property risk 
 MKT_vec = [SCR_IR ; SCR_EQ ; SCR_PR]; 
 
 % check if we are exposed to IR up or down to choose the correlation matrix
-if delta_BOF_UP > delta_BOF_DOWN
+if delta_BOF_rates_UP > delta_BOF_rates_DOWN
     MKT_corr = [1 0 0; 0 1 0.75; 0 0.75 1];
 else
     MKT_corr = [1 0.5 0.5; 0.5 1 0.75; 0.5 0.75 1];
@@ -315,4 +346,3 @@ fprintf('SCR_LIFE: %f\n', SCR_LIFE)
 
 % end run time
 toc
-
