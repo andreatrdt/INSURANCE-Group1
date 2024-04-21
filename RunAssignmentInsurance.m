@@ -16,7 +16,8 @@ close all;
 format bank
 
 % fix random seed
-rng(0)
+Var_seed = 42;
+rng(Var_seed)
 
 % start run time
 tic
@@ -55,7 +56,7 @@ F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
 sigma_equity = 0.2; % volatility of equity
 T = 50; % number of years
-N = 10; % number of simulations
+N = 1e6; % number of simulations
 regular_deduction = 0.022; % regular deduction
 sigma_pf = 0.1; % volatility of property features
 yearly_expense_t0 = 50; % yearly expenses at t = 0
@@ -102,14 +103,14 @@ liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, e
 BOF = F0 - liabilities;
 
 % plot paths 
-figure
-hold on
-for i=1:N
-    plot(dt,PF_simulated(i,:),"LineStyle",":")
-    plot(dt,S_simulated(i,:),"LineStyle","-.")
-    plot(dt,PF_simulated(i,:)+S_simulated(i,:))
-end
-title('Paths of the fund value')
+% figure
+% hold on
+% for i=1:N
+%     plot(dt,PF_simulated(i,:),"LineStyle",":")
+%     plot(dt,S_simulated(i,:),"LineStyle","-.")
+%     plot(dt,PF_simulated(i,:)+S_simulated(i,:))
+% end
+% title('Paths of F, S and PF')
 
 %% Stress scenario UP
 
@@ -343,6 +344,27 @@ fprintf('BSCR: %f\n', BSCR)
 fprintf('SCR: %f\n', SCR)
 fprintf('SCR_MKT: %f\n', SCR_MKT)
 fprintf('SCR_LIFE: %f\n', SCR_LIFE)
+
+% Open the file for writing
+fid = fopen('results.txt', 'a');
+
+% Check if the file is opened successfully
+if fid == -1
+    error('Unable to open file for writing');
+end
+
+% Write the results to the file
+fprintf(fid, 'Seed used: %d\n', Var_seed);
+fprintf(fid, 'Number of simulations: %d\n', N);
+fprintf(fid, 'BSCR: %f\n', BSCR);
+fprintf(fid, 'SCR: %f\n', SCR);
+fprintf(fid, 'SCR_MKT: %f\n', SCR_MKT);
+fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
+
+% Close the file
+fclose(fid);
+
+disp('Results have been saved to "results.txt"');
 
 % end run time
 toc
