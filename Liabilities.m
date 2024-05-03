@@ -6,10 +6,10 @@ function liabilities = Liabilities(F0, P_death, lt, RD, COMM, discounts, expense
     V = zeros(size(dt));
     Expenses = zeros(size(dt));
     Contract_prob =cumprod([1; (1-P_death(1:end-1)).*(1-lt(1:end-1))]);
-    for i=1:length(dt)-1
+    for i=1:length(dt)
 
         % cash flows at each year
-        death_cf = (max(1.1*F0, F(i+1))-benefit_commission)*P_death(i)*(1-lt(i));
+        death_cf = (max(F0, F(i+1))-benefit_commission)*P_death(i)*(1-lt(i));
     
             if i==T   % condition because in the last year it's mandatory to lapse
                 lapse_cf = (F(i+1)-benefit_commission)*(1-P_death(i));

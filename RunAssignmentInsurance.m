@@ -38,6 +38,11 @@ rates_UP = xlsread(filename,5,'S11:S160');
 rates_DOWN = xlsread(filename,6,'S11:S160');
 rates = xlsread(filename,1,'S11:S160');
 
+% convert rates to log returns
+rates_UP = log(1+rates_UP);
+rates_DOWN = log(1+rates_DOWN);
+rates = log(1+rates);
+
 
 % plot yield rate curve
 figure
@@ -56,7 +61,7 @@ F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
 sigma_equity = 0.2; % volatility of equity
 T = 50; % number of years
-N = 1e7; % number of simulations
+N = 1e6; % number of simulations
 regular_deduction = 0.022; % regular deduction
 sigma_pf = 0.1; % volatility of property features
 yearly_expense_t0 = 50; % yearly expenses at t = 0
@@ -87,6 +92,9 @@ disp('Interest rate risk analysis...')
 % simulate equity prices
 S_simulated = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 S = mean(S_simulated,1);
+
+
+
 % simulate property features
 PF_0 = 0.2*F0;
 PF_simulated = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
@@ -94,6 +102,7 @@ PF = mean(PF_simulated,1);
 
 % calculate fund value
 F = S + PF;
+F = [F0, F];
 
 %calculate discouts
 discounts = exp(-rates.*dt);
@@ -122,7 +131,7 @@ PF_rates_UP = simulate_GBM(rates_UP, PF_0, sigma_pf, T, N, regular_deduction);
 PF_rates_UP = mean(PF_rates_UP, 1);
 
 % calculate fund value
-F_rates_UP = S_rates_UP + PF_rates_UP;
+F_rates_UP = [F0 , S_rates_UP + PF_rates_UP];
 
 %calculate discouts
 discounts_UP = exp(-rates_UP.*dt);
@@ -146,7 +155,7 @@ PF_rates_DOWN = mean(PF_rates_DOWN,1);
 discounts_DOWN = exp(-rates_DOWN.*dt);
 
 % calculate fund value
-F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
+F_rates_DOWN = [F0 , S_rates_DOWN + PF_rates_DOWN];
 
 % Liabilities
 liabilities_rates_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_rates_DOWN, benefit_commission,T);
@@ -163,13 +172,16 @@ disp('Property risk analysis...')
 % Initial value of the shocked value of the property
 P0_shocked=(1-0.25)*PF_0;
 % initial value for the fund
-F0_property = P0_shocked + S0;    
+F0_property = P0_shocked + S0;  
 
 % Property simulation
 P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deduction);
+P_shocked = mean(P_shocked,1);
 
 % Value of the fund at each time step
-F = P_shocked + S;       
+F =[F0_property,  P_shocked + S];
+
+   
 
 % Computation of Liabilities 
 liabilities_shocked_pr = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
@@ -191,8 +203,9 @@ F0_equity = S0_shocked + PF_0;
 
 % Equity simulation
 S_shocked = simulate_GBM(rates(1:T), S0_shocked, sigma_equity, T, N, regular_deduction);
+S_shocked = mean(S_shocked,1);
 
-F = S_shocked + PF;       % new value of the fund at each time step
+F = [F0_equity , S_shocked + PF];       % new value of the fund at each time step
 
 % Computation of Liabilities 
 liabilities_shocked_eq = Liabilities(F0_equity, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
@@ -209,6 +222,10 @@ delta_BOF_eq = max(BOF - BOF_eq,0);
 disp('Mortality risk analysis...')
 
 P_death_shocked = min(1,P_death*1.15);
+
+% simulate equity prices
+F = S + PF;
+F = [F0, F];
 
 % Computation of Liabilities
 liabilities_shocked_mortality = Liabilities(F0, P_death_shocked, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
