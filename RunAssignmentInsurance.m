@@ -16,7 +16,7 @@ close all;
 format bank
 
 % fix random seed
-Var_seed = 42;
+Var_seed = 37; % the answer to the ultimate question of life, the universe, and everything
 rng(Var_seed)
 
 % start run time
@@ -56,7 +56,7 @@ F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
 sigma_equity = 0.2; % volatility of equity
 T = 50; % number of years
-N = 1e6; % number of simulations
+N = 1e7; % number of simulations
 regular_deduction = 0.022; % regular deduction
 sigma_pf = 0.1; % volatility of property features
 yearly_expense_t0 = 50; % yearly expenses at t = 0
@@ -340,10 +340,28 @@ SCR_corr = [1 0.25; 0.25 1];        % correlation matrix
 BSCR = sqrt(SCR' * SCR_corr * SCR);
 
 % print results
-fprintf('BSCR: %f\n', BSCR)
-fprintf('SCR: %f\n', SCR)
-fprintf('SCR_MKT: %f\n', SCR_MKT)
-fprintf('SCR_LIFE: %f\n', SCR_LIFE)
+
+fprintf('Results:\n');
+fprintf('---------------------------------\n');
+fprintf('BSCR:     %f\n', BSCR);
+fprintf('SCR:      %f\n', SCR);
+fprintf('SCR_MKT:  %f\n', SCR_MKT);
+fprintf('SCR_LIFE: %f\n', SCR_LIFE);
+fprintf('---------------------------------\n');
+
+figure;
+results = [BSCR(:)', SCR(:)', SCR_MKT(:)', SCR_LIFE(:)'];
+labels = {'BSCR', 'SCR', 'SCR\_MKT', 'SCR\_LIFE'};
+
+bar(results)
+set(gca, 'xticklabel', labels)
+ylabel('Value')
+title('Results')
+text(1:numel(results), results, num2str(results', '%0.2f'), ...
+    'HorizontalAlignment', 'center', ...
+    'VerticalAlignment', 'bottom')
+
+
 
 % Open the file for writing
 fid = fopen('results.txt', 'a');
