@@ -16,7 +16,7 @@ close all;
 format bank
 
 % fix random seed
-Var_seed = 0; % the answer to the ultimate question of life, the universe, and everything
+Var_seed = 42; % the answer to the ultimate question of life, the universe, and everything
 rng(Var_seed)
 
 % start run time
@@ -95,20 +95,19 @@ disp('Interest rate risk analysis...')
 %% Basic scenario
 
 % simulate equity prices
-S_simulated = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
-S = mean(S_simulated,1);
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 
 
 % simulate property features
 PF_0 = 0.2*F0;
-PF_simulated = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
-PF = mean(PF_simulated,1);
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 
 % calculate fund value
 F = S + PF;
 
 %calculate discouts
 discounts = exp(-rates.*dt);
+
 
 liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
@@ -133,13 +132,12 @@ disp(BOF)
 
 %simulate equity prices
 S_rates_UP = simulate_GBM(rates_UP, S0, sigma_equity, T, N, regular_deduction);
-S_rates_UP = mean(S_rates_UP,1);
+
 % simulate property features
 PF_rates_UP = simulate_GBM(rates_UP, PF_0, sigma_pf, T, N, regular_deduction);
-PF_rates_UP = mean(PF_rates_UP, 1);
 
 % calculate fund value
-F_rates_UP = [F0 , S_rates_UP + PF_rates_UP];
+F_rates_UP = S_rates_UP + PF_rates_UP;
 
 %calculate discouts
 discounts_UP = exp(-rates_UP.*dt);
@@ -154,10 +152,10 @@ delta_BOF_rates_UP = max(BOF-BOF_rates_UP,0);
 
 % simulate equity prices
 S_rates_DOWN = simulate_GBM(rates_DOWN, S0, sigma_equity, T, N, regular_deduction);
-S_rates_DOWN = mean(S_rates_DOWN,1);
+
 % simulate property features
 PF_rates_DOWN = simulate_GBM(rates_DOWN, PF_0, sigma_pf, T, N, regular_deduction);
-PF_rates_DOWN = mean(PF_rates_DOWN,1);
+
 
 %calculate discouts
 discounts_DOWN = exp(-rates_DOWN.*dt);
@@ -184,7 +182,6 @@ F0_property = P0_shocked + S0;
 
 % Property simulation
 P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deduction);
-P_shocked = mean(P_shocked,1);
 
 % Value of the fund at each time step
 F = P_shocked + S;   
@@ -209,7 +206,7 @@ F0_equity = S0_shocked + PF_0;
 
 % Equity simulation
 S_shocked = simulate_GBM(rates(1:T), S0_shocked, sigma_equity, T, N, regular_deduction);
-S_shocked = mean(S_shocked,1);
+
 
 F = S_shocked + PF;       % new value of the fund at each time step
 
