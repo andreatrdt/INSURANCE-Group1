@@ -18,7 +18,7 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
 
 
     Expenses = zeros(size(dt));
-    Contract_prob =cumprod([1; (1-P_death(1:end-1)).*(1-lt(1:end-1))]);
+    Contract_prob = cumprod([1; (1-P_death(1:end-1)).*(1-lt(1:end-1))]);
 
     for i=1:length(dt)
 
@@ -31,19 +31,19 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
                 lapse_cf = (F(:,i+1)-benefit_commission)*lt(i)*(1-P_death(i));
             end
     
-        Expenses(:,i)=Contract_prob(i)*expenses(i);
+        Expenses(i)=Contract_prob(i)*expenses(i);
         Lapse_benefits(:,i)=Contract_prob(i)*lapse_cf;
         Death_benefits(:,i)=Contract_prob(i)*death_cf;
         Commissions(:,i)=Contract_prob(i)*F(:,i)/(1-RD)*COMM;
 
-        %Val(:,i) = Lapse_benefits(:,i) +  Death_benefits(:,i) + Expenses(i) + Commissions(:,i);
+        Val(:,i) = Lapse_benefits(:,i) +  Death_benefits(:,i) + Expenses(i) + Commissions(:,i);
 
-        Val(:,i)=Contract_prob(i)*(lapse_cf+death_cf+expenses(i)+F(:,i)/(1-RD)*COMM);
     end
 
+    size(Lapse_benefits)
+    size(Death_benefits)
+    size(Expenses)
     
-   
-
     % computation of the death benefits 
     Death_BEL=(mean(Death_benefits)*discounts);
 

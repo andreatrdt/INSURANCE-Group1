@@ -115,7 +115,7 @@ discounts = exp(-rates.*dt);
 BOF = F0 - liabilities;
 disp(BOF)
 
-[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
 
 
@@ -407,9 +407,6 @@ fclose(fid);
 disp('Results have been saved to "results.txt"');
 
 % print results
-
-Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL
-
 fprintf('Results:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
@@ -418,6 +415,7 @@ fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
 
 fprintf('---------------------------------\n');
+
 
 % end run time
 toc
