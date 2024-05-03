@@ -5,10 +5,8 @@ function [S] = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     % sigma: volatility
     % T: time to maturity
     % N: number of time steps
-    % M: number of paths
     % OUTPUT
     % S: stock price paths
-    % monte carlo simulation
     
     dt = [1:1:T]'; 
     S = zeros(N,T); 
@@ -18,10 +16,12 @@ function [S] = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     %calculate forward rates
     fwd = discounts./[1; discounts(1:end-1)];
     fwd_rates = -log(fwd);
+    delta_time = dt - [0; dt(1:end-1)];
+    g = randn(N,length(dt));
     
-    for i = 1:(length(dt)-1)
-    S(:,i+1) = (1-regular_deduction)*S(:,i).*exp((fwd_rates(i)-(sigma^2)/2)*(dt(i+1)-dt(i))+sigma*sqrt(dt(i+1)-dt(i))*randn(N,1)); 
+    for i = 1:length(dt)
+    S(:,i+1) = (1-regular_deduction)*S(:,i).*exp((fwd_rates(i)-(sigma^2)/2)*delta_time(i)+sigma*sqrt(delta_time(i))*g(:,i)); 
     end
-
+    
     
 end

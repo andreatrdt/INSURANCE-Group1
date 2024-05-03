@@ -1,10 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Assignment 2: Insurance
+% Assignment Insurance
 % Authors:
-%   - Giovanni Riondato
 %   - Giacomo Manfredi
 %   - Lorenzo Tolomelli
 %   - Andera Tarditi
+%   - Giovanni Riondato
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % initial settings
@@ -16,7 +16,7 @@ close all;
 format bank
 
 % fix random seed
-Var_seed = 37; % the answer to the ultimate question of life, the universe, and everything
+Var_seed = 0; % the answer to the ultimate question of life, the universe, and everything
 rng(Var_seed)
 
 % start run time
@@ -30,6 +30,11 @@ filename = 'LifeTable.xlsx';
 % read excel data from LifeTable.xlsx
 P_death = xlsread(filename,1,'D64:D113');
 P_death = P_death./1000;
+
+
+load('prob_death.mat');
+P_death = prob_death;
+
 
 % read excel data from EIOPA
 filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
@@ -94,7 +99,6 @@ S_simulated = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 S = mean(S_simulated,1);
 
 
-
 % simulate property features
 PF_0 = 0.2*F0;
 PF_simulated = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
@@ -102,7 +106,6 @@ PF = mean(PF_simulated,1);
 
 % calculate fund value
 F = S + PF;
-F = [F0, F];
 
 %calculate discouts
 discounts = exp(-rates.*dt);
@@ -111,15 +114,20 @@ liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, e
 
 BOF = F0 - liabilities;
 
+disp(BOF)
+
 % plot paths 
 % figure
 % hold on
 % for i=1:N
-%     plot(dt,PF_simulated(i,:),"LineStyle",":")
-%     plot(dt,S_simulated(i,:),"LineStyle","-.")
-%     plot(dt,PF_simulated(i,:)+S_simulated(i,:))
+%     plot(dt,PF_simulated(i,:))
 % end
-% title('Paths of F, S and PF')
+% figure
+% hold on
+% for i=1:N
+%     plot(dt,S_simulated(i,:))
+% end
+
 
 %% Stress scenario UP
 
@@ -155,7 +163,7 @@ PF_rates_DOWN = mean(PF_rates_DOWN,1);
 discounts_DOWN = exp(-rates_DOWN.*dt);
 
 % calculate fund value
-F_rates_DOWN = [F0 , S_rates_DOWN + PF_rates_DOWN];
+F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
 
 % Liabilities
 liabilities_rates_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_rates_DOWN, benefit_commission,T);
@@ -179,9 +187,7 @@ P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deducti
 P_shocked = mean(P_shocked,1);
 
 % Value of the fund at each time step
-F =[F0_property,  P_shocked + S];
-
-   
+F = P_shocked + S;   
 
 % Computation of Liabilities 
 liabilities_shocked_pr = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
@@ -205,7 +211,7 @@ F0_equity = S0_shocked + PF_0;
 S_shocked = simulate_GBM(rates(1:T), S0_shocked, sigma_equity, T, N, regular_deduction);
 S_shocked = mean(S_shocked,1);
 
-F = [F0_equity , S_shocked + PF];       % new value of the fund at each time step
+F = S_shocked + PF;       % new value of the fund at each time step
 
 % Computation of Liabilities 
 liabilities_shocked_eq = Liabilities(F0_equity, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
@@ -225,7 +231,6 @@ P_death_shocked = min(1,P_death*1.15);
 
 % simulate equity prices
 F = S + PF;
-F = [F0, F];
 
 % Computation of Liabilities
 liabilities_shocked_mortality = Liabilities(F0, P_death_shocked, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
@@ -361,7 +366,6 @@ BSCR = sqrt(SCR' * SCR_corr * SCR);
 fprintf('Results:\n');
 fprintf('---------------------------------\n');
 fprintf('BSCR:     %f\n', BSCR);
-fprintf('SCR:      %f\n', SCR);
 fprintf('SCR_MKT:  %f\n', SCR_MKT);
 fprintf('SCR_LIFE: %f\n', SCR_LIFE);
 fprintf('---------------------------------\n');
