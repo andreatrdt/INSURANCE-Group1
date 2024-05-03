@@ -108,14 +108,14 @@ F = S + PF;
 %calculate discouts
 discounts = exp(-rates.*dt);
 
-check = Mtg_check(S,rates,dt,S0,discounts);
+% check = Mtg_check(S,rates,dt,S0,discounts);
 
 [liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 BOF = F0 - liabilities;
 disp(BOF)
 
-[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, RD, COMM, discounts, expenses,dt,F, benefit_commission,T)
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
 
 

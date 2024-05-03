@@ -36,7 +36,9 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
         Death_benefits(:,i)=Contract_prob(i)*death_cf;
         Commissions(:,i)=Contract_prob(i)*F(:,i)/(1-RD)*COMM;
 
-        Val(:,i) = Lapse_benefits(:,i) +  Death_benefits(:,i) + Expenses(:,i) + Commissions(:,i);
+        %Val(:,i) = Lapse_benefits(:,i) +  Death_benefits(:,i) + Expenses(i) + Commissions(:,i);
+
+        Val(:,i)=Contract_prob(i)*(lapse_cf+death_cf+expenses(i)+F(:,i)/(1-RD)*COMM);
     end
 
     
