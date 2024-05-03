@@ -1,10 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Assignment Insurance
 % Authors:
+%   - Giovanni Riondato ( CG )
 %   - Giacomo Manfredi
 %   - Lorenzo Tolomelli
 %   - Andera Tarditi
-%   - Giovanni Riondato
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % initial settings
@@ -108,12 +108,16 @@ F = S + PF;
 %calculate discouts
 discounts = exp(-rates.*dt);
 
+check = Mtg_check(S,rates,dt,S0,discounts);
 
-liabilities = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+[liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 BOF = F0 - liabilities;
-
 disp(BOF)
+
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, RD, COMM, discounts, expenses,dt,F, benefit_commission,T)
+
+
 
 % plot paths 
 % figure
@@ -143,7 +147,7 @@ F_rates_UP = S_rates_UP + PF_rates_UP;
 discounts_UP = exp(-rates_UP.*dt);
 
 % Liabilities
-liabilities_rates_UP = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt, F_rates_UP, benefit_commission, T);
+[liabilities_rates_UP , ~] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts_UP, expenses,dt, F_rates_UP, benefit_commission, T);
 
 BOF_rates_UP = F0 - liabilities_rates_UP;
 delta_BOF_rates_UP = max(BOF-BOF_rates_UP,0);
@@ -164,7 +168,7 @@ discounts_DOWN = exp(-rates_DOWN.*dt);
 F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
 
 % Liabilities
-liabilities_rates_DOWN = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F_rates_DOWN, benefit_commission,T);
+[liabilities_rates_DOWN , ~] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts_DOWN, expenses,dt,F_rates_DOWN, benefit_commission,T);
 
 BOF_rates_DOWN = F0 - liabilities_rates_DOWN;
 delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
@@ -187,7 +191,7 @@ P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deducti
 F = P_shocked + S;   
 
 % Computation of Liabilities 
-liabilities_shocked_pr = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+[liabilities_shocked_pr , ~] = Liabilities(F0_property, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 % Delta BOF
 BOF_pr = F0_property - liabilities_shocked_pr;
@@ -211,7 +215,7 @@ S_shocked = simulate_GBM(rates(1:T), S0_shocked, sigma_equity, T, N, regular_ded
 F = S_shocked + PF;       % new value of the fund at each time step
 
 % Computation of Liabilities 
-liabilities_shocked_eq = Liabilities(F0_equity, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_shocked_eq , ~] = Liabilities(F0_equity, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % delta BOF
 BOF_eq = F0_equity - liabilities_shocked_eq;
@@ -230,7 +234,7 @@ P_death_shocked = min(1,P_death*1.15);
 F = S + PF;
 
 % Computation of Liabilities
-liabilities_shocked_mortality = Liabilities(F0, P_death_shocked, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_shocked_mortality , ~] = Liabilities(F0, P_death_shocked, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_mortality = F0 - liabilities_shocked_mortality;
@@ -249,7 +253,7 @@ lt = 0.15;
 lt_shocked_UP = min(1.5*lt,1) * ones(length(dt),1);
 
 % Computation of Liabilities
-liabilities_shocked_lapse_UP = Liabilities(F0, P_death, lt_shocked_UP, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_shocked_lapse_UP , ~] = Liabilities(F0, P_death, lt_shocked_UP, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_lapse_UP = F0 - liabilities_shocked_lapse_UP;
@@ -260,7 +264,7 @@ delta_BOF_lapse_UP = max(BOF - BOF_lapse_UP,0);
 lt_shocked_DOWN = max(0.5*lt,lt-0.2) * ones(length(dt),1);
 
 % Computation of Liabilities
-liabilities_shocked_lapse_DOWN = Liabilities(F0, P_death, lt_shocked_DOWN, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_shocked_lapse_DOWN , ~] = Liabilities(F0, P_death, lt_shocked_DOWN, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_lapse_DOWN = F0 - liabilities_shocked_lapse_DOWN;
@@ -271,7 +275,7 @@ delta_BOF_lapse_DOWN = max(BOF - BOF_lapse_DOWN,0);
 lt_shocked_mass = [lt+0.4;lt*ones(T-1,1)];
 
 % Computation of Liabilities
-liabilities_shocked_lapse_mass = Liabilities(F0, P_death, lt_shocked_mass, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_shocked_lapse_mass , ~] = Liabilities(F0, P_death, lt_shocked_mass, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_lapse_mass = F0 - liabilities_shocked_lapse_mass;
@@ -292,7 +296,7 @@ expenses_t0_shocked = yearly_expense_t0*1.1;
 expenses_shocked = expenses_t0_shocked.*(1+inflation+0.01).^[0; dt(1:end-1)];
 
 % Computation of Liabilities
-liabilities_shocked_expense = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses_shocked,dt,F,benefit_commission,T);
+[ liabilities_shocked_expense , ~]= Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses_shocked,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_expense = F0 - liabilities_shocked_expense;
@@ -308,7 +312,7 @@ disp('Catastrophe risk analysis...')
 P_death_cat = [P_death(1)+0.0015; P_death(2:end)];
 
 % Computation of Liabilities 
-liabilities_cat = Liabilities(F0, P_death_cat, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+[liabilities_cat , ~]= Liabilities(F0, P_death_cat, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
 % Delta BOF
 BOF_cat = F0 - liabilities_cat;
@@ -401,6 +405,19 @@ fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
 fclose(fid);
 
 disp('Results have been saved to "results.txt"');
+
+% print results
+
+Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL
+
+fprintf('Results:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+
+fprintf('---------------------------------\n');
 
 % end run time
 toc
