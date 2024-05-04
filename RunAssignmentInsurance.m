@@ -29,6 +29,8 @@ tic
 % filename in .xls
 filename = 'LifeTable.xlsx';
 
+
+% 60 years old male
 % read excel data from LifeTable.xlsx
 P_death = xlsread(filename,1,'D64:D113');
 P_death = P_death./1000;
@@ -459,6 +461,8 @@ fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
 fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
+
 
 % Shift rates 100 bps down
 rates = xlsread(filename,1,'S11:S160');
@@ -490,39 +494,45 @@ fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
 fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
+
 
 %% 4.2
 
-% TODO manca P_death nuova
 
-% T = 80;
-% dt = [1:1:T]';  % time grid
-% expenses = yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)]; % expenses
-% lt = 0.15 * ones(length(dt),1); % lapse rate
+% filename in .xls
+filename = 'LifeTable.xlsx';
 
-% % read excel data from EIOPA
-% rates = xlsread(filename,1,'S11:S160');
-% rates = log(1+rates);
-% rates = rates(1:T);
+% 69 years old male
+% read excel data from LifeTable.xlsx
+P_death = xlsread(filename,1,'D73:D122');
+P_death = P_death./1000;
 
-% % calculate the discouts
-% discounts = exp(-rates.*dt);
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 
-% % simulate equity prices
-% S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 
-% % simulate property features
-% PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+% calculate fund value
+F = S + PF;
 
-% % calculate fund value
-% F = S + PF;
+%calculate discouts
+discounts = exp(-rates.*dt);
 
-% %calculate discouts
-% discounts = exp(-rates.*dt);
+[liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
-% [liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
-% [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
+
+% print results
+fprintf('BELS 69 years old:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
 
 
 % Close the file
