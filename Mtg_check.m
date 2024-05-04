@@ -1,4 +1,4 @@
-function check = Mtg_check(S,rates,dt,S0,discounts)
+function [check] = Mtg_check(S,dt,S0,RD)
 % INPUT
 % S: stock price paths
 % rates: interest rates
@@ -7,17 +7,19 @@ function check = Mtg_check(S,rates,dt,S0,discounts)
 % OUTPUT
 % check: plot of the stock price paths
 
+% check if the stock price paths are martingales
+for i = 1:length(dt)
+    S_mean(i) = mean(S(:,i));
+end
 
 
-S_mean = mean(S,1)';
-dt= [0 ; dt ];
-rates = [0, rates];
-
-figure;
+figure 
 plot(dt,S_mean)
 hold on
-plot(dt,S0*exp(rates.*dt),'r')
+plot(dt,(1-RD)*S0*ones(length(dt)),'r')
+hold off
+xlabel('Time')
+legend('Simulation ','Expected simulation','50 years expected simulation')
 
 check = 1;
-
 end

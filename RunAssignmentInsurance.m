@@ -22,6 +22,8 @@ rng(Var_seed)
 % start run time
 tic
 
+%% point 1 and 2
+
 % load data from xlsx file
 
 % filename in .xls
@@ -64,6 +66,7 @@ legend( 'rates','rates_{UP}','rates_{DOWN}')
 
 F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
+PF_0 = 0.2*F0;
 sigma_equity = 0.2; % volatility of equity
 T = 50; % number of years
 N = 1e6; % number of simulations
@@ -99,7 +102,6 @@ S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 
 
 % simulate property features
-PF_0 = 0.2*F0;
 PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 
 % calculate fund value
@@ -108,12 +110,15 @@ F = S + PF;
 %calculate discouts
 discounts = exp(-rates.*dt);
 
-% check = Mtg_check(S,rates,dt,S0,discounts);
+check = Mtg_check(S,dt,S0,regular_deduction);
+if check == 1
+    disp('Performed Mtg test')
+end
+
 
 [liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 BOF = F0 - liabilities;
-disp(BOF)
 
 [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
@@ -383,8 +388,6 @@ text(1:numel(results), results, num2str(results', '%0.2f'), ...
     'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'bottom')
 
-
-
 % Open the file for writing
 fid = fopen('results.txt', 'a');
 
@@ -401,13 +404,9 @@ fprintf(fid, 'SCR: %f\n', SCR);
 fprintf(fid, 'SCR_MKT: %f\n', SCR_MKT);
 fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
 
-% Close the file
-fclose(fid);
-
-disp('Results have been saved to "results.txt"');
 
 % print results
-fprintf('Results:\n');
+fprintf('BELS:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
@@ -416,6 +415,112 @@ fprintf('Commission: %f\n', Commissions_BEL);
 
 fprintf('---------------------------------\n');
 
+%% point 4
+
+%% 4.1
+filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
+rates = xlsread(filename,1,'S11:S160');
+
+% shift rates 100 bps up
+rates = rates + 100*10^(-4);
+rates = log(1+rates);
+rates = rates(1:T);
+
+% calculate the discouts
+discounts = exp(-rates.*dt);
+
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% calculate fund value
+
+F = S + PF;
+
+% Liabilities
+[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+BOF = F0 - liabilities;
+
+% print results
+fprintf('Shifed BELS UP:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+
+% Shift rates 100 bps down
+rates = xlsread(filename,1,'S11:S160');
+
+% shift rates 100 bps up
+rates = rates - 100*10^(-4);
+rates = log(1+rates);
+rates = rates(1:T);
+
+% calculate the discouts
+discounts = exp(-rates.*dt);
+
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% calculate fund value
+F = S + PF;
+
+% Liabilities
+[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+% print results
+fprintf('Shifed BELS DOWN:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+
+%% 4.2
+
+% TODO manca P_death nuova
+
+% T = 80;
+% dt = [1:1:T]';  % time grid
+% expenses = yearly_expense_t0.*(1+inflation).^[0; dt(1:end-1)]; % expenses
+% lt = 0.15 * ones(length(dt),1); % lapse rate
+
+% % read excel data from EIOPA
+% rates = xlsread(filename,1,'S11:S160');
+% rates = log(1+rates);
+% rates = rates(1:T);
+
+% % calculate the discouts
+% discounts = exp(-rates.*dt);
+
+% % simulate equity prices
+% S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% % simulate property features
+% PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% % calculate fund value
+% F = S + PF;
+
+% %calculate discouts
+% discounts = exp(-rates.*dt);
+
+% [liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+% [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
+
+
+% Close the file
+fclose(fid);
+
+disp('Results have been saved to "results.txt"');
 
 % end run time
 toc
