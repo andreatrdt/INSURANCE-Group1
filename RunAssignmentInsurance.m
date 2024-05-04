@@ -27,17 +27,13 @@ tic
 % load data from xlsx file
 
 % filename in .xls
-filename = 'LifeTable.xlsx';
+filename = 'LIFE_TABLES_MALES.xls';
 
 
 % 60 years old male
 % read excel data from LifeTable.xlsx
-P_death = xlsread(filename,1,'D64:D113');
+P_death = xlsread(filename,1,'E69:E118');
 P_death = P_death./1000;
-
-
-load('prob_death.mat');
-P_death = prob_death;
 
 
 % read excel data from EIOPA
@@ -501,11 +497,11 @@ fprintf('---------------------------------\n');
 
 
 % filename in .xls
-filename = 'LifeTable.xlsx';
+filename = 'LIFE_TABLE_MALE.xls';
 
 % 69 years old male
 % read excel data from LifeTable.xlsx
-P_death = xlsread(filename,1,'D73:D122');
+P_death = xlsread(filename,1,'E78:D127');
 P_death = P_death./1000;
 
 % simulate equity prices
