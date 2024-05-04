@@ -397,12 +397,20 @@ if fid == -1
 end
 
 % Write the results to the file
+fprintf(fid, '---------------------------------\n');
 fprintf(fid, 'Seed used: %d\n', Var_seed);
 fprintf(fid, 'Number of simulations: %d\n', N);
+fprintf(fid, 'Number of years: %d\n', T);
+fprintf(fid, 'BOF: %f\n', BOF);
 fprintf(fid, 'BSCR: %f\n', BSCR);
 fprintf(fid, 'SCR: %f\n', SCR);
 fprintf(fid, 'SCR_MKT: %f\n', SCR_MKT);
 fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
+fprintf(fid, 'Lapse:     %f\n', Lapse_BEL);
+fprintf(fid, 'Death:  %f\n', Death_BEL);
+fprintf(fid, 'Expenses: %f\n', Expenses_BEL);
+fprintf(fid, 'Commission: %f\n', Commissions_BEL);
+
 
 
 % print results
