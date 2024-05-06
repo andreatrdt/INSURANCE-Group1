@@ -98,12 +98,12 @@ disp('Interest rate risk analysis...')
 % simulate equity prices
 S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
 
-
 % simulate property features
 PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 
 % calculate fund value
 F = S + PF;
+disp(mean(F(:,end)))
 
 %calculate discouts
 discounts = exp(-rates.*dt);
@@ -121,18 +121,6 @@ BOF = F0 - liabilities;
 [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
 
-
-% plot paths 
-% figure
-% hold on
-% for i=1:N
-%     plot(dt,PF_simulated(i,:))
-% end
-% figure
-% hold on
-% for i=1:N
-%     plot(dt,S_simulated(i,:))
-% end
 
 
 %% Stress scenario UP
@@ -401,7 +389,6 @@ fprintf(fid, 'Number of simulations: %d\n', N);
 fprintf(fid, 'Number of years: %d\n', T);
 fprintf(fid, 'BOF: %f\n', BOF);
 fprintf(fid, 'BSCR: %f\n', BSCR);
-fprintf(fid, 'SCR: %f\n', SCR);
 fprintf(fid, 'SCR_MKT: %f\n', SCR_MKT);
 fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
 fprintf(fid, 'Lapse:     %f\n', Lapse_BEL);
@@ -497,7 +484,7 @@ fprintf('---------------------------------\n');
 
 
 % filename in .xls
-filename = 'LIFE_TABLE_MALE.xls';
+filename = 'LIFE_TABLES_MALES.xls';
 
 % 69 years old male
 % read excel data from LifeTable.xlsx
