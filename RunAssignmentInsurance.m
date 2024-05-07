@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Assignment Insurance
 % Authors:
-%   - Giovanni Riondato ( CG )
+%   - Giovanni Riondato 
 %   - Giacomo Manfredi
 %   - Lorenzo Tolomelli
 %   - Andera Tarditi
@@ -17,27 +17,21 @@ format bank
 format long
 
 % fix random seed
-Var_seed = 42; % the answer to the ultimate question of life, the universe, and everything
+Var_seed = 0; % the answer to the ultimate question of life, the universe, and everything
 rng(Var_seed)
 
 % start run time
 tic
 
-%% point 1 and 2
-
 % load data from xlsx file
 
 % filename in .xls
 filename = 'Life_tables_of_the_resident_population.xlsx';
+ 
+% read excel data from Life_tables_of_the_resident_population.xlsx
+P_death = xlsread(filename,1,'D63:D112'); % since the client is a 60 years old male
 
-% read excel data from LifeTable.xlsx
-P_death = xlsread(filename,1,'D64:D113');
 P_death = P_death./1000;
-
-
-load('prob_death.mat');
-P_death = prob_death;
-
 
 % read excel data from EIOPA
 filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
@@ -67,7 +61,6 @@ legend( 'rates','rates_{UP}','rates_{DOWN}')
 % assets
 F0 = 1e5; % value of fund at t = 0
 S0 = 0.8*F0; % value of equity at t = 0
-PF_0 = 0.2*F0;
 sigma_equity = 0.2; % volatility of equity
 PF_0 = 0.2*F0; % value of property at t = 0
 sigma_pf = 0.1; % volatility of property features
@@ -100,30 +93,45 @@ rates_DOWN = rates_DOWN(1:T);
 
 % in order to choose a proper N, we want to check Martingality for Equity
 % and Property
-N = 1e5; % we want to check whether this value is enough
+
+disp('Martingality check...')
+
+N = 1e6; % we want to check whether this value is enough
 
 % equity
-S_equity = simulate_GBM(rates, S0, sigma_equity, T, N); % no regular deduction
+S_equity = simulate_GBM(rates, S0, sigma_equity, T, N); % simulations with no regular deduction
+S_initial = S0 * ones(T)'; % vector of the initial value
 S_mean = mean(S_equity(:,2:end),1)'; % vector of means at each time step
-S_deterministic = S0*exp(rates.*dt)'; % vector of the dederministic projection
+S_mean_discounted = exp(-rates.*dt).*S_mean;
+S_deterministic = S0*exp(rates.*dt)'; % vector of the deterministic projection
 
 % plot of the Martinality check for Equity
 figure
-plot(dt,S_deterministic,'LineWidth',2)
+plot(dt, S_deterministic,'LineWidth',2)
 hold on
-plot(dt,S_mean,'LineWidth',2)
-legend('Deterministic','Stochastic')
+plot(dt, S_mean,'LineWidth',2)
+plot(dt, S_initial,'o')
+plot(dt,S_mean_discounted,'*')
+legend('Deterministic projection','Mean of stoch sims ','PF_{initial}','Discounted mean of stoch sims')
+title('Equity Martingality check')
+hold off
 
 % property
-Property = simulate_GBM(rates, PF_0, sigma_pf, T, N); % no regular deduction
+Property = simulate_GBM(rates, PF_0, sigma_pf, T, N); % simulations with no regular deduction
+PF_initial = PF_0 * ones(T)'; % vector of the initial value
 P_mean = mean(Property(:,2:end),1)'; % vector of means at each time step
 P_deterministic = PF_0*exp(rates.*dt)'; % vector of the dederministic projection
+PF_mean_discounted = exp(-rates.*dt).*P_mean;
 
 figure
 plot(dt, P_deterministic,'LineWidth',2)
 hold on
 plot(dt, P_mean,'LineWidth',2)
-legend('Deterministic','Stochastic')
+plot(dt, PF_initial,'o')
+plot(dt, PF_mean_discounted,'*')
+legend('Deterministic projection','Mean of stoch sims ','PF_{initial}','Discounted mean of stoch sims')
+title('Property Martingality check')
+hold off
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Intrest rate risk
@@ -140,20 +148,17 @@ PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
 
 % calculate fund value
 F = S + PF;
-disp(mean(F(:,end)))
 
 % calculate discouts
 discounts = exp(-rates.*dt);
 
-% check = Mtg_check(S,rates,dt,S0,discounts);
+% computation of the Liabilities
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL, Commissions_BEL] = Liabilities(F0, ...
+            P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
 
 % computation of the BOF in basic scenario
 BOF = F0 - liabilities;
-disp(BOF)
-
-[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
-
-
+disp(BOF);
 
 % plot paths 
 % figure
@@ -166,7 +171,6 @@ disp(BOF)
 % for i=1:N
 %     plot(dt,S_simulated(i,:))
 % end
-
 
 %% Stress scenario UP
 
@@ -218,10 +222,10 @@ delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
 
 disp('Equity risk analysis...')
 % introduction of the symmetric adjustment
-symm_adj = 0.0525;
+symm_adj = 0.0525; % march 2024 from EIOPA
 
 % initial value for shocked equity
-S0_shocked = (1 - 0.39 - symm_adj)*S0; % 0.39 since it is of type 1
+S0_shocked = (1 - 0.39 - symm_adj) * S0; % 0.39 since it is of type 1
 
 % initial value for the fund
 F0_equity = S0_shocked + PF_0;
@@ -272,7 +276,7 @@ delta_BOF_pr = max(BOF - BOF_pr,0);
 
 disp('Mortality risk analysis...')
 
-P_death_shocked = min(1,P_death*1.15);
+P_death_shocked = min(1, P_death*1.15);
 
 % simulate equity prices
 F = S + PF;
@@ -444,23 +448,20 @@ if fid == -1
 end
 
 % Write the results to the file
-fprintf(fid, '---------------------------------\n');
 fprintf(fid, 'Seed used: %d\n', Var_seed);
 fprintf(fid, 'Number of simulations: %d\n', N);
-fprintf(fid, 'Number of years: %d\n', T);
-fprintf(fid, 'BOF: %f\n', BOF);
 fprintf(fid, 'BSCR: %f\n', BSCR);
+fprintf(fid, 'SCR: %f\n', SCR);
 fprintf(fid, 'SCR_MKT: %f\n', SCR_MKT);
 fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
-fprintf(fid, 'Lapse:     %f\n', Lapse_BEL);
-fprintf(fid, 'Death:  %f\n', Death_BEL);
-fprintf(fid, 'Expenses: %f\n', Expenses_BEL);
-fprintf(fid, 'Commission: %f\n', Commissions_BEL);
 
+% Close the file
+fclose(fid);
 
+disp('Results have been saved to "results.txt"');
 
 % print results
-fprintf('BELS:\n');
+fprintf('Results:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
@@ -469,6 +470,124 @@ fprintf('Commission: %f\n', Commissions_BEL);
 
 fprintf('---------------------------------\n');
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% point 4
+
+%% 4.1
+filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
+rates = xlsread(filename,1,'S11:S160');
+
+% shift rates 100 bps up
+rates = rates + 100*10^(-4);
+rates = log(1+rates);
+rates = rates(1:T);
+
+% calculate the discouts
+discounts = exp(-rates.*dt);
+
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% calculate fund value
+
+F = S + PF;
+
+% Liabilities
+[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+BOF = F0 - liabilities;
+
+% print results
+fprintf('Shifed BELS UP:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
+
+
+% Shift rates 100 bps down
+rates = xlsread(filename,1,'S11:S160');
+
+% shift rates 100 bps up
+rates = rates - 100*10^(-4);
+rates = log(1+rates);
+rates = rates(1:T);
+
+% calculate the discouts
+discounts = exp(-rates.*dt);
+
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% calculate fund value
+F = S + PF;
+
+% Liabilities
+[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+% print results
+fprintf('Shifed BELS DOWN:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
+
+
+%% 4.2
+
+
+% filename in .xls
+filename = 'LIFE_TABLES_MALES.xls';
+
+% 69 years old male
+% read excel data from LifeTable.xlsx
+P_death = xlsread(filename,1,'E78:D127');
+P_death = P_death./1000;
+
+% simulate equity prices
+S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
+
+% simulate property features
+PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
+
+% calculate fund value
+F = S + PF;
+
+%calculate discouts
+discounts = exp(-rates.*dt);
+
+[liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+
+[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
+
+
+% print results
+fprintf('BELS 69 years old:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL);
+fprintf('Death:  %f\n', Death_BEL);
+fprintf('Expenses: %f\n', Expenses_BEL);
+fprintf('Commission: %f\n', Commissions_BEL);
+fprintf('---------------------------------\n');
+
+
+% Close the file
+fclose(fid);
+
+disp('Results have been saved to "results.txt"');
 
 % end run time
 toc
