@@ -158,9 +158,8 @@ discounts = exp(-rates.*dt);
 
 % computation of the BOF in basic scenario
 BOF = F0 - liabilities;
-disp(BOF);
 
-% plot paths 
+%% plot paths 
 % figure
 % hold on
 % for i=1:N
@@ -368,9 +367,6 @@ P_death_cat = [P_death(1)+0.0015; P_death(2:end)];
 [liabilities_cat, Lapse_BEL_cat, Death_BEL_cat, Expenses_BEL_cat, Commissions_BEL_cat]= Liabilities(F0, ...
             P_death_cat, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
 
-% Delta BOF
-BOF_cat = F0 - liabilities_cat;
-delta_BOF_catastrophe = max(BOF - BOF_cat,0);
 
 % Basic own fund and delta BOF
 BOF_cat = F0 - liabilities_cat;
@@ -402,7 +398,7 @@ SCR_MKT = sqrt(MKT_vec' * MKT_corr * MKT_vec);
 SCR_MORT = delta_BOF_mortality; % Mortality risk
 SCR_LAPSE = max([delta_BOF_lapse_UP,delta_BOF_lapse_DOWN,delta_BOF_lapse_mass]); % Lapse risk
 SCR_EXP = delta_BOF_expense; % Expense risk
-SCR_CAT = delta_BOF_catastrophe; % Catastrophe risk
+SCR_CAT = delta_BOF_cat; % Catastrophe risk
 LIFE_vec = [SCR_MORT ; SCR_LAPSE ; SCR_EXP ; SCR_CAT];
 
 % correlation matrix
@@ -428,8 +424,8 @@ fprintf('SCR_LIFE: %f\n', SCR_LIFE);
 fprintf('---------------------------------\n');
 
 figure;
-results = [BSCR(:)', SCR(:)', SCR_MKT(:)', SCR_LIFE(:)'];
-labels = {'BSCR', 'SCR', 'SCR\_MKT', 'SCR\_LIFE'};
+results = [BSCR(:)', SCR_MKT(:)', SCR_LIFE(:)'];
+labels = {'BSCR', 'SCR\_MKT', 'SCR\_LIFE'};
 
 bar(results)
 set(gca, 'xticklabel', labels)
@@ -458,25 +454,91 @@ fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
 % Close the file
 fclose(fid);
 
-disp('Results have been saved to "results.txt"');
 
-% print results
-fprintf('Results:\n');
+%% print results
+fprintf('Results:\n\n');
+
+fprintf('Basic scenario:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
 fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
 
+fprintf('shock rates UP:\n');
 fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_rates_UP);
+fprintf('Death:  %f\n', Death_BEL_rates_UP);
+fprintf('Expenses: %f\n', Expenses_BEL_rates_UP);
+fprintf('Commission: %f\n', Commissions_BEL_rates_UP);
+
+fprintf('shock rates DOWN:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_rates_DOWN);
+fprintf('Death:  %f\n', Death_BEL_rates_DOWN);
+fprintf('Expenses: %f\n', Expenses_BEL_rates_DOWN);
+fprintf('Commission: %f\n', Commissions_BEL_rates_DOWN);
+
+fprintf('Equity risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_equity);
+fprintf('Death:  %f\n', Death_BEL_equity);
+fprintf('Expenses: %f\n', Expenses_BEL_equity);
+fprintf('Commission: %f\n', Commissions_BEL_equity);
+
+fprintf('Property risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_property);
+fprintf('Death:  %f\n', Death_BEL_property);
+fprintf('Expenses: %f\n', Expenses_BEL_property);
+fprintf('Commission: %f\n', Commissions_BEL_property);
+
+fprintf('Mortality risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_mortality);
+fprintf('Death:  %f\n', Death_BEL_mortality);
+fprintf('Expenses: %f\n', Expenses_BEL_mortality);
+fprintf('Commission: %f\n', Commissions_BEL_mortality);
+
+fprintf('shock lapse UP:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_lapse_UP);
+fprintf('Death:  %f\n', Death_BEL_lapse_UP);
+fprintf('Expenses: %f\n', Expenses_BEL_lapse_UP);
+fprintf('Commission: %f\n', Commissions_BEL_lapse_UP);
+
+fprintf('shock lapse DOWN:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_lapse_DOWN);
+fprintf('Death:  %f\n', Death_BEL_lapse_DOWN);
+fprintf('Expenses: %f\n', Expenses_BEL_lapse_DOWN);
+fprintf('Commission: %f\n', Commissions_BEL_lapse_DOWN);
+
+fprintf('lapse mass risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_lapse_mass);
+fprintf('Death:  %f\n', Death_BEL_lapse_mass);
+fprintf('Expenses: %f\n', Expenses_BEL_lapse_mass);
+fprintf('Commission: %f\n', Commissions_BEL_lapse_mass);
+
+fprintf('Expense risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_expense);
+fprintf('Death:  %f\n', Death_BEL_expense);
+fprintf('Expenses: %f\n', Expenses_BEL_expense);
+fprintf('Commission: %f\n', Commissions_BEL_expense);
+
+fprintf('Catastrophe risk:\n');
+fprintf('---------------------------------\n');
+fprintf('Lapse:     %f\n', Lapse_BEL_cat);
+fprintf('Death:  %f\n', Death_BEL_cat);
+fprintf('Expenses: %f\n', Expenses_BEL_cat);
+fprintf('Commission: %f\n', Commissions_BEL_cat);
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% point 4
 
-%% 4.1
+% 4.1
 filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
 rates = xlsread(filename,1,'S11:S160');
 
@@ -549,13 +611,14 @@ fprintf('---------------------------------\n');
 %% 4.2
 
 
-% filename in .xls
-filename = 'LIFE_TABLES_MALES.xls';
 
-% 69 years old male
-% read excel data from LifeTable.xlsx
-P_death = xlsread(filename,1,'E78:D127');
+% filename in .xls
+filename = 'Life_tables_of_the_resident_population.xlsx';
+ 
+% read excel data from Life_tables_of_the_resident_population.xlsx
+P_death = xlsread(filename,1,'D73:D122'); % male of 69 years old
 P_death = P_death./1000;
+
 
 % simulate equity prices
 S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
@@ -569,13 +632,13 @@ F = S + PF;
 %calculate discouts
 discounts = exp(-rates.*dt);
 
-[liabilities , ~ ] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
-
 [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
 
+BOF = F0 - liabilities;
 
+disp(BOF)
 % print results
-fprintf('BELS 69 years old:\n');
+fprintf('BELS:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
@@ -583,9 +646,6 @@ fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
 fprintf('---------------------------------\n');
 
-
-% Close the file
-fclose(fid);
 
 disp('Results have been saved to "results.txt"');
 
