@@ -1,4 +1,4 @@
-function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T)
+function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, lapse_pay,T)
     % Computes the liabilities and split the BEL value into its main PV components: 
     % death benefits, lapse benefits, expenses and commissions
     %       
@@ -36,15 +36,15 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
         
         % at the end of the 50 years all the people leave the contract with a massive surrender
         if i == T   % condition because in the last year it's mandatory to lapse
-            lapse_cf = (F(:,i+1) - benefit_commission) * (1 - P_death(i));
+            lapse_cf = (F(:,i+1) - lapse_pay) * (1 - P_death(i));
         else
-            lapse_cf = (F(:,i+1) - benefit_commission) * lt(i) * (1 - P_death(i));
+            lapse_cf = (F(:,i+1) - lapse_pay) * lt(i) * (1 - P_death(i));
         end
 
         Expenses(i) = Contract_prob(i) * expenses(i);
         Lapse_benefits(:,i) = Contract_prob(i) * lapse_cf;
         Death_benefits(:,i) = Contract_prob(i) * death_cf;
-        Commissions(:,i) = Contract_prob(i) * F(:,i) / (1 - regular_deduction) * COMM;
+        Commissions(:,i) =  COMM * Contract_prob(i) * F(:,i+1) / (1 - regular_deduction);
 
         Val(:,i) = Lapse_benefits(:,i) +  Death_benefits(:,i) + Expenses(i) + Commissions(:,i);
         

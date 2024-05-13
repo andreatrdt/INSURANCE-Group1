@@ -12,6 +12,11 @@ function S = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     
     % if we do not give regular_deduction as an input, then we are in the
     % Martingality Check and RD has to be set to 0
+
+    % fix random seed 
+    Var_seed = 42; % the answer to the ultimate question of life, the universe, and everything
+    rng(Var_seed)
+
     if nargin <= 5
         regular_deduction = 0;
     end

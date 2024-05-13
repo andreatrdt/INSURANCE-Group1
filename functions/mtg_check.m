@@ -15,7 +15,7 @@ function mtg_check(rates, initial_cond, sigma, T, N,dt)
 Simulated = simulate_GBM(rates, initial_cond, sigma, T, N); % simulations with no regular deduction
 initial = initial_cond * ones(T)'; % vector of the initial value
 Mean_sim = mean(Simulated(:,2:end),1)'; % vector of means at each time step
-mean_discounted = exp(-rates.*dt).*S_mean;
+mean_discounted = exp(-rates.*dt).*Mean_sim;
 deterministic = initial_cond*exp(rates.*dt)'; % vector of the deterministic projection
 
 % plot of the Martinality check

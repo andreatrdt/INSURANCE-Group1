@@ -12,16 +12,14 @@ clc;
 clear all;
 close all;
 
-% select format
-% format bank
-format long
-
-addpath('functions')
-addpath('data')
-
-% fix random seed 
 Var_seed = 42; % the answer to the ultimate question of life, the universe, and everything
 rng(Var_seed)
+
+% select format
+format bank
+format long
+
+% fix random seed
 
 % start run time
 tic
@@ -71,7 +69,7 @@ sigma_pf = 0.1; % volatility of property features
 % liabilities
 
 % contract terms
-benefit_commission = 20; % benefit commission
+lapse_pay = 20; % benefit commission
 regular_deduction = 0.022; % regular deduction
 COMM = 0.014; % commission
 
@@ -101,12 +99,8 @@ disp('Martingality check...')
 
 N = 1e6; % we want to check whether this value is enough
 
-% equity
-mtg_check(rates, S0, sigma_equity, T, N,dt)
-
-% property
-mtg_check(rates,PF_0 , sigma_pf, T, N,dt)
-
+mtg_check(rates, S0, sigma_equity, T, N, dt); % Equity
+mtg_check(rates, PF_0, sigma_pf, T, N, dt); % Property
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Intrest rate risk
@@ -129,34 +123,24 @@ discounts = exp(-rates.*dt);
 
 % computation of the Liabilities
 [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL, Commissions_BEL] = Liabilities(F0, ...
-            P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
+            P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, lapse_pay, T);
 
 % computation of the BOF in basic scenario
 BOF = F0 - liabilities;
-disp(BOF)
 
-% % plot paths
+% plot paths 
 % figure
 % hold on
-
-% N_plot = 10;
-
-% % simulate equity prices
-% S_simulated_plot = simulate_GBM(rates, S0, sigma_equity, T, N_plot, regular_deduction);
-
-% % simulate property features
-% PF_simulated_plot = simulate_GBM(rates, PF_0, sigma_pf, T, N_plot, regular_deduction);
-% for i=1:N_plot
-%     plot(dt,PF_simulated_plot(i,:))
+% for i=1:N
+%     plot(dt,PF_simulated(i,:))
 % end
 % figure
 % hold on
-% for i=1:N_plot
-%     plot(dt,S_simulated_plot(i,:))
+% for i=1:N
+%     plot(dt,S_simulated(i,:))
 % end
 
 %% Stress scenario UP
-disp('Stress scenario for rates UP...')
 
 %simulate equity prices
 S_rates_UP = simulate_GBM(rates_UP, S0, sigma_equity, T, N, regular_deduction);
@@ -167,12 +151,18 @@ PF_rates_UP = simulate_GBM(rates_UP, PF_0, sigma_pf, T, N, regular_deduction);
 % calculate fund value
 F_rates_UP = S_rates_UP + PF_rates_UP;
 
+% calculate discouts
+discounts_UP = exp(-rates_UP.*dt);
+
 % computation of the Liabilities
-[liabilities_rates_UP , Lapse_BEL_rates_UP, Death_BEL_rates_UP, Expenses_BEL_rates_UP, Commissions_BEL_rates_UP,delta_BOF_rates_UP,BOF_rates_UP] = stress_rates(F0, ...
-            P_death, lt, regular_deduction, COMM, expenses,dt, F_rates_UP, benefit_commission, T,rates_UP,BOF);
+[liabilities_rates_UP , Lapse_BEL_rates_UP, Death_BEL_rates_UP, Expenses_BEL_rates_UP, Commissions_BEL_rates_UP] = Liabilities(F0, ...
+          P_death, lt, regular_deduction, COMM, discounts_UP, expenses,dt, F_rates_UP, lapse_pay, T);
+
+% computation of the BOF and deltaBOF with rates up
+BOF_rates_UP = F0 - liabilities_rates_UP;
+delta_BOF_rates_UP = max(BOF-BOF_rates_UP,0);
 
 %% Stress scenario DOWN
-disp('Stress scenario for rates DOWN..')
 
 % simulate equity prices
 S_rates_DOWN = simulate_GBM(rates_DOWN, S0, sigma_equity, T, N, regular_deduction);
@@ -180,20 +170,47 @@ S_rates_DOWN = simulate_GBM(rates_DOWN, S0, sigma_equity, T, N, regular_deductio
 % simulate property features
 PF_rates_DOWN = simulate_GBM(rates_DOWN, PF_0, sigma_pf, T, N, regular_deduction);
 
+%calculate discouts
+discounts_DOWN = exp(-rates_DOWN.*dt);
+
 % calculate fund value
 F_rates_DOWN = S_rates_DOWN + PF_rates_DOWN;
 
-[liabilities_rates_DOWN , Lapse_BEL_rates_DOWN, Death_BEL_rates_DOWN, Expenses_BEL_rates_DOWN, Commissions_BEL_rates_DOWN,delta_BOF_rates_DOWN,BOF_rates_DOWN] = stress_rates(F0, ...
-    P_death, lt, regular_deduction, COMM, expenses,dt, F_rates_DOWN, benefit_commission, T,rates_DOWN,BOF);
+% computation of the Liabilities
+[liabilities_rates_DOWN, Lapse_BEL_rates_DOWN, Death_BEL_rates_DOWN, Expenses_BEL_rates_DOWN, Commissions_BEL_rates_DOWN] = Liabilities(F0, ...
+            P_death, lt, regular_deduction, COMM, discounts_DOWN, expenses,dt,F_rates_DOWN, lapse_pay,T);
+
+% computation of the BOF and deltaBOF with rates down
+BOF_rates_DOWN = F0 - liabilities_rates_DOWN;
+delta_BOF_rates_DOWN = max(BOF-BOF_rates_DOWN,0);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Equity risk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 disp('Equity risk analysis...')
+% introduction of the symmetric adjustment
+symm_adj = 0.0525; % march 2024 from EIOPA
+
+% initial value for shocked equity
+S0_shocked = (1 - 0.39 - symm_adj) * S0; % 0.39 since it is of type 1
+
+% initial value for the fund
+F0_equity = S0_shocked + PF_0;
+
+% equity simulation
+S_shocked = simulate_GBM(rates(1:T), S0_shocked, sigma_equity, T, N, regular_deduction);
+
+% value of the fund
+F = S_shocked + PF; 
 
 % computation of Liabilities 
-[liabilities_shocked_eq, Lapse_BEL_equity, Death_BEL_equity, Expenses_BEL_equity, Commissions_BEL_equity, delta_BOF_eq] = ...
-    equity_risk(S0, PF_0, rates, sigma_equity, T, N, regular_deduction, P_death, lt, COMM, discounts, expenses, dt, PF, benefit_commission, BOF,F0);
+[liabilities_shocked_eq, Lapse_BEL_equity, Death_BEL_equity, Expenses_BEL_equity, Commissions_BEL_equity] = Liabilities(F0, ...
+            P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
+
+% computation of BOF and delta BOF in case of equity risk
+BOF_eq = F0_equity - liabilities_shocked_eq;
+delta_BOF_eq = max(BOF - BOF_eq,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Property risk
@@ -201,9 +218,25 @@ disp('Equity risk analysis...')
 
 disp('Property risk analysis...')
 
+% Initial value of the shocked value of the property
+P0_shocked=(1-0.25)*PF_0;
+
+% initial value for the fund
+F0_property = P0_shocked + S0;  
+
+% property simulation
+P_shocked = simulate_GBM(rates(1:T), P0_shocked, sigma_pf, T, N, regular_deduction);
+
+% value of the fund 
+F = P_shocked + S;   
+
 % computation of Liabilities 
-[liabilities_shocked_pr, Lapse_BEL_property, Death_BEL_property, Expenses_BEL_property, Commissions_BEL_property,delta_BOF_pr] = ...
-     property_risk(S0, PF_0, rates, sigma_pf, T, N, regular_deduction, P_death, lt, COMM, discounts, expenses, dt, benefit_commission, BOF,S,F0);
+[liabilities_shocked_pr, Lapse_BEL_property, Death_BEL_property, Expenses_BEL_property, Commissions_BEL_property] = Liabilities(F0, ...
+            P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, lapse_pay, T);
+
+% computation of BOF and delta BOF in case of property risk
+BOF_pr = F0_property - liabilities_shocked_pr;
+delta_BOF_pr = max(BOF - BOF_pr,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% MORTALITY RISK
@@ -211,8 +244,18 @@ disp('Property risk analysis...')
 
 disp('Mortality risk analysis...')
 
-[liabilities_shocked_mortality, Lapse_BEL_mortality, Death_BEL_mortality, Expenses_BEL_mortality, Commissions_BEL_mortality,delta_BOF_mortality] = ...
-    mortality_risk(F0, T, regular_deduction, P_death, lt, COMM, discounts, expenses, dt, benefit_commission, BOF,S,PF);
+P_death_shocked = min(1, P_death*1.15);
+
+% simulate equity prices
+F = S + PF;
+
+% Computation of Liabilities
+[liabilities_shocked_mortality, Lapse_BEL_mortality, Death_BEL_mortality, Expenses_BEL_mortality, Commissions_BEL_mortality] = Liabilities(F0, ...
+            P_death_shocked, lt, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
+
+% computation of BOF and delta BOF in case of mortality risk
+BOF_mortality = F0 - liabilities_shocked_mortality;
+delta_BOF_mortality = max(BOF - BOF_mortality,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Lapse risk
@@ -229,7 +272,7 @@ lt_shocked_UP = min(1.5*lt,1) * ones(length(dt),1);
 
 % computation of the Liabilities
 [liabilities_shocked_lapse_UP, Lapse_BEL_lapse_UP, Death_BEL_lapse_UP, Expenses_BEL_lapse_UP, Commissions_BEL_lapse_UP] = Liabilities(F0, ...
-            P_death, lt_shocked_UP, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+            P_death, lt_shocked_UP, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
 
 % computation of BOF and delta BOF
 BOF_lapse_UP = F0 - liabilities_shocked_lapse_UP;
@@ -241,7 +284,7 @@ lt_shocked_DOWN = max(0.5*lt,lt-0.2) * ones(length(dt),1);
 
 % Computation of the Liabilities
 [liabilities_shocked_lapse_DOWN, Lapse_BEL_lapse_DOWN, Death_BEL_lapse_DOWN, Expenses_BEL_lapse_DOWN, Commissions_BEL_lapse_DOWN] = Liabilities(F0, ...
-            P_death, lt_shocked_DOWN, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+            P_death, lt_shocked_DOWN, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
 
 % computation of BOF and delta BOF
 BOF_lapse_DOWN = F0 - liabilities_shocked_lapse_DOWN;
@@ -249,11 +292,11 @@ delta_BOF_lapse_DOWN = max(BOF - BOF_lapse_DOWN,0);
 
 %% Lapse mass risk
 
-lt_shocked_mass = [lt+0.4 ; lt*ones(T-1,1)];  
+lt_shocked_mass = [lt + 0.4;lt*ones(T-1,1)];     % verificare se + 0.4 0 direttamente 0.4
 
 % Computation of the Liabilities
 [liabilities_shocked_lapse_mass, Lapse_BEL_lapse_mass, Death_BEL_lapse_mass, Expenses_BEL_lapse_mass, Commissions_BEL_lapse_mass] = Liabilities(F0, ...
-            P_death, lt_shocked_mass, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+            P_death, lt_shocked_mass, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
 
 % computation of BOF and delta BOF
 BOF_lapse_mass = F0 - liabilities_shocked_lapse_mass;
@@ -274,7 +317,7 @@ expenses_shocked = expenses_t0_shocked.*(1+inflation+0.01).^[0; dt(1:end-1)];
 
 % computation of the Liabilities
 [liabilities_shocked_expense, Lapse_BEL_expense, Death_BEL_expense, Expenses_BEL_expense, Commissions_BEL_expense]= Liabilities(F0, ...
-            P_death, lt, regular_deduction, COMM, discounts, expenses_shocked,dt,F,benefit_commission,T);
+            P_death, lt, regular_deduction, COMM, discounts, expenses_shocked,dt,F,lapse_pay,T);
 
 % computation of the BOF and delta BOF in case of expense risk
 BOF_expense = F0 - liabilities_shocked_expense;
@@ -291,8 +334,11 @@ P_death_cat = [P_death(1)+0.0015; P_death(2:end)];
 
 % Computation of the Liabilities 
 [liabilities_cat, Lapse_BEL_cat, Death_BEL_cat, Expenses_BEL_cat, Commissions_BEL_cat]= Liabilities(F0, ...
-            P_death_cat, lt, regular_deduction, COMM, discounts, expenses,dt,F,benefit_commission,T);
+            P_death_cat, lt, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
 
+% Delta BOF
+BOF_cat = F0 - liabilities_cat;
+delta_BOF_catastrophe = max(BOF - BOF_cat,0);
 
 % Basic own fund and delta BOF
 BOF_cat = F0 - liabilities_cat;
@@ -324,7 +370,7 @@ SCR_MKT = sqrt(MKT_vec' * MKT_corr * MKT_vec);
 SCR_MORT = delta_BOF_mortality; % Mortality risk
 SCR_LAPSE = max([delta_BOF_lapse_UP,delta_BOF_lapse_DOWN,delta_BOF_lapse_mass]); % Lapse risk
 SCR_EXP = delta_BOF_expense; % Expense risk
-SCR_CAT = delta_BOF_cat; % Catastrophe risk
+SCR_CAT = delta_BOF_catastrophe; % Catastrophe risk
 LIFE_vec = [SCR_MORT ; SCR_LAPSE ; SCR_EXP ; SCR_CAT];
 
 % correlation matrix
@@ -380,11 +426,10 @@ fprintf(fid, 'SCR_LIFE: %f\n\n\n', SCR_LIFE);
 % Close the file
 fclose(fid);
 
+disp('Results have been saved to "results.txt"');
 
-%% print results
-fprintf('Results:\n\n');
-
-fprintf('Basic scenario:\n');
+% print results
+fprintf('Results:\n');
 fprintf('---------------------------------\n');
 fprintf('Lapse:     %f\n', Lapse_BEL);
 fprintf('Death:  %f\n', Death_BEL);
@@ -392,9 +437,9 @@ fprintf('Expenses: %f\n', Expenses_BEL);
 fprintf('Commission: %f\n', Commissions_BEL);
 fprintf('---------------------------------\n');
 
-
 fprintf('shock rates UP:\n');
 fprintf('---------------------------------\n');
+
 fprintf('Lapse:     %f\n', Lapse_BEL_rates_UP);
 fprintf('Death:  %f\n', Death_BEL_rates_UP);
 fprintf('Expenses: %f\n', Expenses_BEL_rates_UP);
@@ -404,6 +449,7 @@ fprintf('---------------------------------\n');
 
 fprintf('shock rates DOWN:\n');
 fprintf('---------------------------------\n');
+
 fprintf('Lapse:     %f\n', Lapse_BEL_rates_DOWN);
 fprintf('Death:  %f\n', Death_BEL_rates_DOWN);
 fprintf('Expenses: %f\n', Expenses_BEL_rates_DOWN);
@@ -413,6 +459,7 @@ fprintf('---------------------------------\n');
 
 fprintf('Equity risk:\n');
 fprintf('---------------------------------\n');
+
 fprintf('Lapse:     %f\n', Lapse_BEL_equity);
 fprintf('Death:  %f\n', Death_BEL_equity);
 fprintf('Expenses: %f\n', Expenses_BEL_equity);
@@ -481,121 +528,3 @@ fprintf('Death:  %f\n', Death_BEL_cat);
 fprintf('Expenses: %f\n', Expenses_BEL_cat);
 fprintf('Commission: %f\n', Commissions_BEL_cat);
 fprintf('---------------------------------\n');
-
-
-
-%% point 4
-
-% 4.1
-filename = 'EIOPA_RFR_20240331_Term_Structures.xlsx';
-rates = xlsread(filename,1,'S11:S160');
-
-% shift rates 100 bps up
-rates = rates + 100*10^(-4);
-rates = log(1+rates);
-rates = rates(1:T);
-
-% calculate the discouts
-discounts = exp(-rates.*dt);
-
-% simulate equity prices
-S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
-
-% simulate property features
-PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
-
-% calculate fund value
-
-F = S + PF;
-
-% Liabilities
-[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
-
-BOF = F0 - liabilities;
-
-% print results
-fprintf('Shifed BELS UP:\n');
-fprintf('---------------------------------\n');
-fprintf('Lapse:     %f\n', Lapse_BEL);
-fprintf('Death:  %f\n', Death_BEL);
-fprintf('Expenses: %f\n', Expenses_BEL);
-fprintf('Commission: %f\n', Commissions_BEL);
-fprintf('---------------------------------\n');
-
-
-% Shift rates 100 bps down
-rates = xlsread(filename,1,'S11:S160');
-
-% shift rates 100 bps up
-rates = rates - 100*10^(-4);
-rates = log(1+rates);
-rates = rates(1:T);
-
-% calculate the discouts
-discounts = exp(-rates.*dt);
-
-% simulate equity prices
-S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
-
-% simulate property features
-PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
-
-% calculate fund value
-F = S + PF;
-
-% Liabilities
-[liabilities , Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses, dt, F, benefit_commission, T);
-
-% print results
-fprintf('Shifed BELS DOWN:\n');
-fprintf('---------------------------------\n');
-fprintf('Lapse:     %f\n', Lapse_BEL);
-fprintf('Death:  %f\n', Death_BEL);
-fprintf('Expenses: %f\n', Expenses_BEL);
-fprintf('Commission: %f\n', Commissions_BEL);
-fprintf('---------------------------------\n');
-
-
-%% 4.2
-
-
-
-% filename in .xls
-filename = 'Life_tables_of_the_resident_population.xlsx';
- 
-% read excel data from Life_tables_of_the_resident_population.xlsx
-P_death = xlsread(filename,1,'D73:D122'); % male of 69 years old
-P_death = P_death./1000;
-
-
-% simulate equity prices
-S = simulate_GBM(rates, S0, sigma_equity, T, N, regular_deduction);
-
-% simulate property features
-PF = simulate_GBM(rates, PF_0, sigma_pf, T, N, regular_deduction);
-
-% calculate fund value
-F = S + PF;
-
-%calculate discouts
-discounts = exp(-rates.*dt);
-
-[liabilities, Lapse_BEL, Death_BEL, Expenses_BEL , Commissions_BEL] = Liabilities(F0, P_death, lt, regular_deduction, COMM, discounts, expenses,dt,F, benefit_commission,T);
-
-BOF = F0 - liabilities;
-
-disp(BOF)
-% print results
-fprintf('BELS:\n');
-fprintf('---------------------------------\n');
-fprintf('Lapse:     %f\n', Lapse_BEL);
-fprintf('Death:  %f\n', Death_BEL);
-fprintf('Expenses: %f\n', Expenses_BEL);
-fprintf('Commission: %f\n', Commissions_BEL);
-fprintf('---------------------------------\n');
-
-
-disp('Results have been saved to "results.txt"');
-
-% end run time
-toc
