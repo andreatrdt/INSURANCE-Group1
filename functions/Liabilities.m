@@ -32,7 +32,7 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
 
     for i = 1:length(dt)
         % cash flows at each year
-        death_cf = (max(F0, F(:,i+1))) * P_death(i) * (1-lt(i));     % TODO se togli 1-lt viene deltaBOFCAT positivo
+        death_cf = (max(F0, F(:,i+1))) * P_death(i);     
         
         % at the end of the 50 years all the people leave the contract with a massive surrender
         if i == T   % condition because in the last year it's mandatory to lapse
