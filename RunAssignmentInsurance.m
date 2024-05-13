@@ -290,6 +290,8 @@ lt_shocked_DOWN = max(0.5*lt,lt-0.2) * ones(length(dt),1);
 BOF_lapse_DOWN = F0 - liabilities_shocked_lapse_DOWN;
 delta_BOF_lapse_DOWN = max(BOF - BOF_lapse_DOWN,0);
 
+
+
 %% Lapse mass risk
 
 lt_shocked_mass = [lt + 0.4;lt*ones(T-1,1)];     % verificare se + 0.4 0 direttamente 0.4

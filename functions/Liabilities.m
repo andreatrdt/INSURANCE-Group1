@@ -70,4 +70,9 @@ function [liabilities, Lapse_BEL, Death_BEL, Expenses_BEL,Commissions_BEL] = Lia
     % computation of the liabilities
     liabilities = sum(mean(Val)* discounts);
 
+    % figure
+    % bar ( mean(Val)' .* discounts )
+    % xlabel (' years ')
+    % title ('Discounted cash flows')
+
     end % function Liabilities
