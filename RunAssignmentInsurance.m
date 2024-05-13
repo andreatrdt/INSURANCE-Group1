@@ -48,16 +48,16 @@ rates_UP = log(1+rates_UP);
 rates_DOWN = log(1+rates_DOWN);
 rates = log(1+rates);
 
-% % plot yield rate curve
-% figure
-% hold on 
-% years = 1:150;
-% plot(years,rates)
-% plot(years,rates_UP)
-% plot(years,rates_DOWN)
-% rate_50 = interp1(years,rates,50);
-% plot(50,rate_50,'ro')
-% legend( 'rates','rates_{UP}','rates_{DOWN}')
+% plot yield rate curve
+figure
+hold on 
+years = 1:150;
+plot(years,rates)
+plot(years,rates_UP)
+plot(years,rates_DOWN)
+rate_50 = interp1(years,rates,50);
+plot(50,rate_50,'ro')
+legend( 'rates','rates_{UP}','rates_{DOWN}')
 
 %% Initialization of the parameters
 

@@ -40,3 +40,10 @@ function S = simulate_GBM(rates, S0, sigma, T, N, regular_deduction)
     end
     
 end % function simulate_GBM
+
+
+
+
+
+
+

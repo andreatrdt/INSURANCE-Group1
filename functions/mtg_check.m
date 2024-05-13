@@ -1,21 +1,33 @@
-function mtg_check(rates, S0, sigma_equity, T, N,dt)
+function mtg_check(rates, initial_cond, sigma, T, N,dt)
+% Martingality check
+% INPUTS
+% rates: interest rates
+% initial_cond: initial value of the equity or property
+% sigma: volatility
+% T: time to maturity
+% N: number of time steps
+% dt: time grid
+%
+% OUTPUT
+% plot of the Martingality check
 
-% equity
-S_equity = simulate_GBM(rates, S0, sigma_equity, T, N); % simulations with no regular deduction
-S_initial = S0 * ones(T)'; % vector of the initial value
-S_mean = mean(S_equity(:,2:end),1)'; % vector of means at each time step
-S_mean_discounted = exp(-rates.*dt).*S_mean;
-S_deterministic = S0*exp(rates.*dt)'; % vector of the deterministic projection
+% equity or property simulation
+Simulated = simulate_GBM(rates, initial_cond, sigma, T, N); % simulations with no regular deduction
+initial = initial_cond * ones(T)'; % vector of the initial value
+Mean_sim = mean(Simulated(:,2:end),1)'; % vector of means at each time step
+mean_discounted = exp(-rates.*dt).*S_mean;
+deterministic = initial_cond*exp(rates.*dt)'; % vector of the deterministic projection
 
-% plot of the Martinality check for Equity
+% plot of the Martinality check
 figure
-plot(dt, S_deterministic,'LineWidth',2)
+plot(dt, deterministic,'LineWidth',2)
 hold on
-plot(dt, S_mean,'LineWidth',2)
-plot(dt, S_initial,'o')
-plot(dt,S_mean_discounted,'*')
+plot(dt, Mean_sim,'LineWidth',2)
+plot(dt, initial,'o')
+plot(dt,mean_discounted,'*')
 legend('Deterministic projection','Mean of stoch sims ','PF_{initial}','Discounted mean of stoch sims')
 title('Equity Martingality check')
 hold off
 
-end
+end % function mtg_check
+
