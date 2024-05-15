@@ -1,4 +1,4 @@
-function mtg_check(rates, initial_cond, sigma, T, N,dt)
+function mtg_check(rates, initial_cond, sigma, T, N,dt,flag)
 % Martingality check
 % INPUTS
 % rates: interest rates
@@ -26,7 +26,14 @@ plot(dt, Mean_sim,'LineWidth',2)
 plot(dt, initial,'o')
 plot(dt,mean_discounted,'*')
 legend('Deterministic projection','Mean of stoch sims ','PF_{initial}','Discounted mean of stoch sims')
-title('Equity Martingality check')
+
+if flag == 1
+    title('equity Martingality check')
+    legend('Deterministic projection','Mean of stoch sims ','S_{initial}','Discounted mean of stoch sims')
+else 
+    title('property Martingality check')
+    legend('Deterministic projection','Mean of stoch sims ','PF_{initial}','Discounted mean of stoch sims')
+end
 hold off
 
 end % function mtg_check

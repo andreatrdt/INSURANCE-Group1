@@ -19,10 +19,13 @@ rng(Var_seed)
 format bank
 format long
 
-% fix random seed
 
 % start run time
 tic
+
+% load data
+addpath('data')
+addpath('functions')
 
 % load data from xlsx file
 
@@ -98,9 +101,13 @@ rates_DOWN = rates_DOWN(1:T);
 disp('Martingality check...')
 
 N = 1e6; % we want to check whether this value is enough
+ 
 
-mtg_check(rates, S0, sigma_equity, T, N, dt); % Equity
-mtg_check(rates, PF_0, sigma_pf, T, N, dt); % Property
+flag = 1; % equity  
+mtg_check(rates, S0, sigma_equity, T, N, dt,flag); % Equity
+
+flag = 2; % property
+mtg_check(rates, PF_0, sigma_pf, T, N, dt,flag); % Property
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Intrest rate risk
@@ -128,16 +135,16 @@ discounts = exp(-rates.*dt);
 % computation of the BOF in basic scenario
 BOF = F0 - liabilities;
 
-% plot paths 
+% % plot paths 
 % figure
 % hold on
 % for i=1:N
-%     plot(dt,PF_simulated(i,:))
+%     plot(dt,PF(i,1:end-1))
 % end
 % figure
 % hold on
 % for i=1:N
-%     plot(dt,S_simulated(i,:))
+%     plot(dt,S(i,1:end-1))
 % end
 
 %% Stress scenario UP
@@ -300,6 +307,7 @@ lt_shocked_mass = [lt + 0.4;lt*ones(T-1,1)];     % verificare se + 0.4 0 diretta
 [liabilities_shocked_lapse_mass, Lapse_BEL_lapse_mass, Death_BEL_lapse_mass, Expenses_BEL_lapse_mass, Commissions_BEL_lapse_mass] = Liabilities(F0, ...
             P_death, lt_shocked_mass, regular_deduction, COMM, discounts, expenses,dt,F,lapse_pay,T);
 
+
 % computation of BOF and delta BOF
 BOF_lapse_mass = F0 - liabilities_shocked_lapse_mass;
 delta_BOF_lapse_mass = max(BOF - BOF_lapse_mass,0);
@@ -342,9 +350,6 @@ P_death_cat = [P_death(1)+0.0015; P_death(2:end)];
 BOF_cat = F0 - liabilities_cat;
 delta_BOF_catastrophe = max(BOF - BOF_cat,0);
 
-% Basic own fund and delta BOF
-BOF_cat = F0 - liabilities_cat;
-delta_BOF_cat = max(BOF-BOF_cat,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% BSCR Computation
